@@ -69,8 +69,7 @@ function showObjects(key) {
         obj = document.createElement('div')
 
         let txt = JSON.stringify(el.body)
-        let regex = /.{250}/
-        obj.innerHTML = `[${i}] : ${txt.match(regex)[0]}`
+        obj.innerHTML = `[${i}] : ${txt.substring(0,200)}`
         obj.className = "cat_obj"
         obj.onclick=function (){
             showObjPopup(el,key,i)
