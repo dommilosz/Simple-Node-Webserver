@@ -15,7 +15,7 @@ function getData() {
         div.className = `cat cat_${key}`
         let txt = document.createElement('div')
         txt.className = "cat_name"
-        txt.innerHTML = key
+        txt.innerHTML = `${key} (${json[key].length})`
         div.append(txt)
         let objs = document.createElement('div')
         objs.className = `cat_objs cat_objs_${key}`
