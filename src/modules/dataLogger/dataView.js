@@ -67,7 +67,10 @@ function showObjects(key) {
     let keyjson = json[key];
     keyjson.forEach((el,i)=>{
         obj = document.createElement('div')
-        obj.innerHTML = `[${i}] : ${JSON.stringify(el.body)}`
+
+        let txt = JSON.stringify(el.body)
+        let regex = /.{250}/
+        obj.innerHTML = `[${i}] : ${txt.match(regex)[0]}`
         obj.className = "cat_obj"
         obj.onclick=function (){
             showObjPopup(el,key,i)
