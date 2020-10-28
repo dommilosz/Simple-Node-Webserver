@@ -73,3 +73,24 @@ server.get('/ViewData/item/*', function (req, res) {
         sendFile(req, res, './src/login.html', 200)
     }
 })
+server.get('/data/delItem/*', function (req, res) {
+    if (checkLoginAdmin(req)) {
+        data = JSON.parse(fs.readFileSync('src/modules/dataLogger/data.json', {encoding: "utf-8"}))
+        let args = req.url.split('?')[0].split('/')
+        args.shift()
+        args.shift()
+        args.shift()
+        let cat = args[0]
+        let i = args[1]
+
+        data[cat].splice(i,1)
+        fs.writeFileSync('src/modules/dataLogger/data.json', JSON.stringify(data))
+
+        res.writeHead(200)
+        res.write("Deleted!")
+        res.end()
+
+    } else {
+        sendFile(req, res, './src/login.html', 200)
+    }
+})
