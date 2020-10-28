@@ -64,7 +64,7 @@ server.get('/ViewData/item/*', function (req, res) {
         let i = args[1]
 
         let html = fs.readFileSync('src/modules/dataLogger/itemView.html', {encoding: 'utf-8'})
-        html = html.replace('{"json": "obj"}', `(JSON.parse('${JSON.stringify(data[cat][i])}'))`)
+        html = html.replace('{"json": "obj"}', `(JSON.parse('${JSON.stringify(data[cat][i]).split("'").join("")}'))`)
         res.writeHead(200)
         res.write(html)
         res.end()
