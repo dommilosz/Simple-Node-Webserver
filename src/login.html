@@ -107,26 +107,30 @@
         }
 
         function GetHash() {
-            theUrl = "/auth?password=" + document.getElementsByClassName("passwinp")[0].value + "?username=" + document.getElementsByClassName("usrinp")[0].value;
+            theUrl = "/auth"
+            let body = {
+                username: document.getElementsByClassName("usrinp")[0].value,
+                password:document.getElementsByClassName("passwinp")[0].value,
+            }
             if (adminLogin === true) {
-                theUrl += '?admin=1'
+                body['admin'] ='1'
             }
             var xhttp = new XMLHttpRequest();
-            xhttp.onreadystatechange = function () {
-                if (this.readyState == 4 && this.status == 200) {
-                    console.log(this.responseText);
-                    window.location.href = "?hash=" + this.responseText + "?username=" + document.getElementsByClassName("usrinp")[0].value;
-                } else if (this.status != 200 && this.readyState == 4) {
-                    console.log(this.status);
-                    if (this.status == 403) {
-                        openmodal(this.responseText);
-                    } else {
-                        openmodal("Something went wrong\nTry Again!");
-                    }
+            xhttp.open("POST", theUrl, false);
+            xhttp.setRequestHeader("Content-Type","Application/json");
+            xhttp.send(JSON.stringify(body));
+            if (xhttp.status === 200) {
+                console.log(xhttp.responseText);
+                window.location.href = "?hash=" + xhttp.responseText + "?username=" + document.getElementsByClassName("usrinp")[0].value;
+            } else if (xhttp.status !== 200 && xhttp.readyState === 4) {
+                console.log(xhttp.status);
+                if (xhttp.status === 403) {
+                    openmodal(xhttp.responseText);
+                } else {
+                    openmodal("Something went wrong\nTry Again!");
                 }
-            };
-            xhttp.open("GET", theUrl, true);
-            xhttp.send();
+            }
+
         }
 
 

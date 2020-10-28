@@ -11,8 +11,8 @@ export let one_time_hashes = {}
 export let password = config.password;
 export let admin_password = config.admin_password
 
-server.get("/auth", function (req: Request, res: Response) {
-    let params: any = GetParams(req);
+server.post("/auth", function (req: Request, res: Response) {
+    let params: any = req.body
     if (params.username && params.username.trim() != "") {
         if (auth.checkTimeout(req)) {
             res.writeHead(403, {"Content-Type": "text/json"});
