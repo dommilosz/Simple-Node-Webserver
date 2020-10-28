@@ -31,9 +31,6 @@ function getData(){
         let b = Math.round(Math.random()*155)+100
         el.style['background-color'] = `rgb(${r},${g},${b})`
     })
-    var node = new PrettyJSON.view.Node({
-        el:$('#result'),
-        data:json});
 }
 
 getData()
