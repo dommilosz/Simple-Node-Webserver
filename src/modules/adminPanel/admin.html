@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ADMIN PANEL</title>
+</head>
+<body>
+    <script src="/admin.js"></script>
+    <button onclick="location.href=`/ViewData?hash=${GetParams().hash}?username=${GetParams().username}`">DATA</button>
+    <button onclick="location.href=`/ViewHashes?hash=${GetParams().hash}?username=${GetParams().username}`">HASHES</button>
+</body>
+</html>

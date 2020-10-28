@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Item</title>
+    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Quicksand"/>
+    <link rel="stylesheet" type="text/css" href="http://warfares.github.io/pretty-json/css/pretty-json.css"/>
+    <script src="http://warfares.github.io/pretty-json/libs/jquery-1.11.1.min.js"></script>
+    <script src="https://underscorejs.org/underscore-min.js"></script>
+    <script src="https://backbonejs.org/backbone-min.js"></script>
+    <script src="http://warfares.github.io/pretty-json/pretty-json-min.js"></script>
+
+    <style>
+        .res_a, .res_b {
+            border-style: solid;
+            margin: 7px;
+            padding: 7px;
+        }
+
+        .string {
+            color: #ff6700;
+        }
+
+        .number {
+            color: aqua;
+        }
+
+        .boolean {
+            color: #ff00f7;
+        }
+    </style>
+</head>
+<body>
+HASH
+<div class="res_b"></div>
+ADDITIONAL INFO
+<div class="res_a"></div>
+<div id="btns">
+<button onclick="location.reload()">REFRESH</button>
+<button onclick="changeHashType('refresh','0')">RENEW</button>
+<button onclick="changeHashType('invalid','0')">MAKE INVALID</button>
+<button onclick="changeHashType('admin','0')">TOGGLE ADMIN</button>
+</div>
+<script>
+    hash = {"json": "obj"};
+    document.getElementsByClassName('res_b')[0].innerHTML = hash.hash;
+    res_a = document.getElementsByClassName('res_a')[0]
+    res_a.innerHTML = "";
+    Object.keys(hash).forEach(key=>{
+        let obj = document.createElement('div')
+        obj.innerHTML = `${key} : ${hash[key]}`
+        if(key.toLowerCase().includes('hash')){
+            let content = `${hash[key]}`
+            let href = `/ViewHashes/hash/${hash[key]}?hash=${GetParams().hash}?username=${GetParams().username}`
+            obj.innerHTML = `${key} : <a href="${href}">${content}</a>`
+        }
+        res_a.append(obj)
+    })
+
+    if(hash.type==="otp"){
+        let btn = document.createElement("button")
+        btn.innerHTML = "TOGGLE USED"
+        btn.onclick = ()=>changeHashType('used','0')
+        $('#btns').append(btn)
+    }
+
+    function changeHashType(action,value){
+        let req = new XMLHttpRequest()
+        req.open("POST",`/setHash?hash=${GetParams().hash}?username=${GetParams().username}`,false)
+        req.setRequestHeader("Content-Type","Application/json")
+        req.send(JSON.stringify({type:action,value:value,hash:hash}));
+        location.reload()
+    }
+    function GetParams() {
+        let url = location.href
+        let params = {};
+        url.split("?").slice(1, 1024).forEach(element => {
+            params[element.split('=')[0]] = decodeURI(element.split('=')[1]);
+        });
+        return params
+    }
+</script>
+</body>
+</html>

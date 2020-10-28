@@ -1,0 +1,95 @@
+<html>
+<head>
+    <title>Collected Data</title>
+    <script src="http://warfares.github.io/pretty-json/libs/jquery-1.11.1.min.js"></script>
+    <script src="viewhashes.js"></script>
+    <style>
+        .result {
+            border-style: solid;
+            display: inline-block;
+            padding: 10px;
+            width: calc(100% - 25px);
+            height: calc(100% - 60px);
+        }
+
+        .cat {
+            border-style: dotted;
+            margin: 5px;
+        }
+
+        .cat_name {
+            margin: 4px;
+            border-bottom-style: solid;
+        }
+
+        .clickable {
+            height: 32px;
+            position: absolute;
+            width: 95%;
+            cursor: pointer;
+        }
+
+        .cat_obj {
+            background-color: rgba(0, 0, 0, 0.15);
+            margin: 6px;
+            padding: 6px;
+            cursor: pointer;
+        }
+
+        .obj_popup {
+            background-color: #626262;
+            width: 80%;
+            height: 80%;
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            display: none;
+        }
+
+        .popup_cat_name {
+            text-align: center;
+            font-size: 30px;
+            font-weight: bolder;
+        }
+
+        .popup_close_btn {
+            position: absolute;
+            top: 0px;
+            left: calc(100% - 30px);
+            width: 30px;
+            height: 30px;
+            background-color: red;
+            text-align: center;
+            cursor: pointer;
+            line-height: 30px;
+        }
+
+        .c-green {
+            color: #00ff00;
+        }
+
+        .c-red {
+            color: #c10000;
+        }
+        .new-btn {
+            right: -2.5%;
+            position: inherit;
+        }
+    </style>
+</head>
+
+<body>
+<script>
+
+</script>
+<button id="reload" onclick="getData()">RELOAD</button>
+<br>
+<button onclick="location.href=`/admin?hash=${GetParams().hash}?username=${GetParams().username}`">ADMIN</button>
+
+<span id="results"></span>
+<br>
+<br>
+<span id="results2"></span>
+<div class="obj_popup"></div>
+</body>
+</html>
