@@ -18,9 +18,21 @@ server.use(json());
 export function GetParams(req){
 	let url = req.originalUrl
 	let params = {};
-	url.split("?").slice(1,1024).forEach(element => {
-		params[element.split('=')[0]] =  decodeURI(element.split('=')[1]);
-	});
+
+	let regex = /\?[a-z0-9]*=[^?]*/gm;
+	let m;
+	while ((m = regex.exec(url)) !== null) {
+		if (m.index === regex.lastIndex) {
+			regex.lastIndex++;
+		}
+		m.forEach((match, groupIndex) => {
+			match = match.replace('?','')
+			let matcharr = match.split('=')
+			matcharr.shift()
+			params[match.split('=')[0]] = matcharr.join('=')
+		});
+	}
+
 	return params
 }
 

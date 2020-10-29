@@ -33,9 +33,7 @@ server.get('/one_times', function (req, res) {
 server.get('/ViewHashes', function (req, res) {
     if (checkLoginAdmin(req)) {
         checkHashes()
-        res.writeHead(200)
-        res.write(fs.readFileSync('src/modules/hashesPanel/hashesView.html', {encoding: 'utf-8'}).replace('{"token_lifetime": 1}', String(config.auth.token_lifetime)))
-        res.end()
+        sendFile(req,res,'src/modules/hashesPanel/hashesView.html',200)
     } else {
         sendAdminLoginPage(req, res)
     }
@@ -53,12 +51,7 @@ server.get('/ViewHashes/hash/*', function (req, res) {
         let hash = args[0]
         let hash_obj = hashes_arr[hash] ? hashes_arr[hash] : one_time_hashes[hash]
         checkHashes()
-        let html = fs.readFileSync('src/modules/hashesPanel/hashView.html', {encoding: 'utf-8'})
-        html = html.replace('{"json": "obj"}', `(JSON.parse('${JSON.stringify(hash_obj)}'))`)
-        html = html.replace('{"json": "obj"}', `(JSON.parse('${JSON.stringify(hash_obj)}'))`)
-        res.writeHead(200)
-        res.write(html)
-        res.end()
+        sendFile(req,res,'src/modules/hashesPanel/hashView.html',200,{obj:hash_obj})
 
     } else {
         sendFile(req, res, './src/login.html', 200)

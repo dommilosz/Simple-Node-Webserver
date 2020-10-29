@@ -3,6 +3,7 @@ import * as fs from "fs";
 import {Request, Response} from "express";
 import {config} from "./configHandler";
 import {sendFile} from "./wsutils";
+import {btoa,atob} from "./wsutils";
 
 const auth = require("./auth-handler");
 export let hashes_arr = {}
@@ -14,6 +15,8 @@ export let admin_password = config.admin_password
 server.post("/auth", function (req: Request, res: Response) {
     let params: any = req.body
     if (params.username && params.username.trim() != "") {
+        params.username = atob(params.username)
+        params.password = atob(params.password)
         if (auth.checkTimeout(req)) {
             res.writeHead(403, {"Content-Type": "text/json"});
             res.write(`SLOW DOWN! - Wait ${auth.checkTimeout(req)}ms`);
@@ -100,7 +103,7 @@ function genHash() {
     let r2 = Math.random().toString(36).substring(7);
     let r3 = Math.random().toString(36).substring(7);
     let r4 = Math.random().toString(36).substring(7);
-    let r = r1 + r2 + r3 + r4;
+    let r = btoa(r1 + r2 + r3 + r4);
     if (getHash(r)) {
         return genHash()
     } else {
@@ -165,6 +168,7 @@ export function setConnTimeout(req, number) {
 
 export function checkLogin(req) {
     let params: any = GetParams(req)
+    params.username = atob(params.username)
     return (params.hash && params.username && params.username.trim() !== "" && Check_UHash(params.hash, params.username)) || password == "";
 }
 
@@ -176,6 +180,7 @@ function Check_UHashAdmin(hash: any, username: any) {
 
 export function checkLoginAdmin(req) {
     let params: any = GetParams(req)
+    params.username = atob(params.username)
     return (params.hash && params.username && params.username.trim() !== "" && Check_UHashAdmin(params.hash, params.username)) || password == "";
 }
 
@@ -202,15 +207,11 @@ export function sendFileAuthAdmin(req, res, path, status) {
 }
 
 export function sendLoginPage(req, res) {
-    res.writeHead(200)
-    res.write(fs.readFileSync('./src/login.html', {encoding: 'utf-8'}).replace('{"adminLogin": "false"}', 'false'));
-    res.end()
+    sendFile(req,res,'./src/login.html',200,{admin:false})
 }
 
 export function sendAdminLoginPage(req, res) {
-    res.writeHead(200)
-    res.write(fs.readFileSync('./src/login.html', {encoding: 'utf-8'}).replace('{"adminLogin": "false"}', 'true'));
-    res.end()
+    sendFile(req,res,'./src/login.html',200,{admin:true})
 }
 
 export function checkHashes() {

@@ -63,11 +63,7 @@ server.get('/ViewData/item/*', function (req, res) {
         let cat = args[0]
         let i = args[1]
 
-        let html = fs.readFileSync('src/modules/dataLogger/itemView.html', {encoding: 'utf-8'})
-        html = html.replace('{"json": "obj"}', `(JSON.parse(atob('${(Buffer.from(JSON.stringify(data[cat][i])).toString('base64'))}')))`)
-        res.writeHead(200)
-        res.write(html)
-        res.end()
+        sendFile(req,res,'src/modules/dataLogger/itemView.html',200,{item:data[cat][i]})
 
     } else {
         sendFile(req, res, './src/login.html', 200)

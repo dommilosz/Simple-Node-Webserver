@@ -42,7 +42,7 @@ ADDITIONAL INFO
 <button onclick="changeHashType('admin','0')">TOGGLE ADMIN</button>
 </div>
 <script>
-    hash = {"json": "obj"};
+    hash = "%key=%obj%"
     document.getElementsByClassName('res_b')[0].innerHTML = hash.hash;
     res_a = document.getElementsByClassName('res_a')[0]
     res_a.innerHTML = "";
@@ -53,6 +53,10 @@ ADDITIONAL INFO
             let content = `${hash[key]}`
             let href = `/ViewHashes/hash/${hash[key]}?hash=${GetParams().hash}?username=${GetParams().username}`
             obj.innerHTML = `${key} : <a href="${href}">${content}</a>`
+        }
+        if(key==="lastUpdated"){
+            let content = `${hash[key]}`
+            obj.innerHTML = `${key} : ${content} --- <a class="string">${new Date().toString(content)}</a>`
         }
         res_a.append(obj)
     })
@@ -71,12 +75,24 @@ ADDITIONAL INFO
         req.send(JSON.stringify({type:action,value:value,hash:hash}));
         location.reload()
     }
-    function GetParams() {
+    function GetParams(){
         let url = location.href
         let params = {};
-        url.split("?").slice(1, 1024).forEach(element => {
-            params[element.split('=')[0]] = decodeURI(element.split('=')[1]);
-        });
+
+        let regex = /\?[a-z0-9]*=[^?]*/gm;
+        let m;
+        while ((m = regex.exec(url)) !== null) {
+            if (m.index === regex.lastIndex) {
+                regex.lastIndex++;
+            }
+            m.forEach((match, groupIndex) => {
+                match = match.replace('?','')
+                let matcharr = match.split('=')
+                matcharr.shift()
+                params[match.split('=')[0]] = matcharr.join('=')
+            });
+        }
+
         return params
     }
 </script>

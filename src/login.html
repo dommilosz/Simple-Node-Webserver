@@ -59,6 +59,7 @@
             color: rgb(228, 228, 228);
             font-family: sans-serif;
         }
+
         .login_btn {
             border-radius: 10px;
             width: 250px;
@@ -67,70 +68,71 @@
             background-color: #00b7ff;
             border-color: #b8860b00;
         }
-        .input{
+
+        .input {
             border-radius: 10px;
             background-color: #10101a;
             color: white;
         }
-        .margin-5{
+
+        .margin-5 {
             margin: 5px;
         }
     </style>
     <script>
 
-        let adminLogin = {"adminLogin": "false"}
+        let adminLogin = "%key=%admin%"
 
-        function httpGet() {
-
-            function httpGetAsync(theUrl) {
-                var xmlHttp = new XMLHttpRequest();
-                xmlHttp.onreadystatechange = function () {
-                    if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
-                        console.log(xmlHttp.readyState);
-                        console.log(xmlHttp.responseText);
-                    }
-                }
-                xmlHttp.open("GET", theUrl, true); // true for asynchronous
-                xmlHttp.send(null);
-            }
-
-            httpGetAsync(theUrl);
-        }
-
-        function GetParams() {
+        function GetParams(){
             let url = location.href
             let params = {};
-            url.split("?").slice(1, 1024).forEach(element => {
-                params[element.split('=')[0]] = decodeURI(element.split('=')[1]);
-            });
+
+            let regex = /\?[a-z0-9]*=[^?]*/gm;
+            let m;
+            while ((m = regex.exec(url)) !== null) {
+                if (m.index === regex.lastIndex) {
+                    regex.lastIndex++;
+                }
+                m.forEach((match, groupIndex) => {
+                    match = match.replace('?','')
+                    let matcharr = match.split('=')
+                    matcharr.shift()
+                    params[match.split('=')[0]] = matcharr.join('=')
+                });
+            }
+
             return params
         }
 
         function GetHash() {
-            theUrl = "/auth"
-            let body = {
-                username: document.getElementsByClassName("usrinp")[0].value,
-                password:document.getElementsByClassName("passwinp")[0].value,
-            }
-            if (adminLogin === true) {
-                body['admin'] ='1'
-            }
-            var xhttp = new XMLHttpRequest();
-            xhttp.open("POST", theUrl, false);
-            xhttp.setRequestHeader("Content-Type","Application/json");
-            xhttp.send(JSON.stringify(body));
-            if (xhttp.status === 200) {
-                console.log(xhttp.responseText);
-                window.location.href = "?hash=" + xhttp.responseText + "?username=" + document.getElementsByClassName("usrinp")[0].value;
-            } else if (xhttp.status !== 200 && xhttp.readyState === 4) {
-                console.log(xhttp.status);
-                if (xhttp.status === 403) {
-                    openmodal(xhttp.responseText);
-                } else {
-                    openmodal("Something went wrong\nTry Again!");
+            try {
+                theUrl = "/auth"
+                let body = {
+                    username: btoa(document.getElementsByClassName("usrinp")[0].value),
+                    password: btoa(document.getElementsByClassName("passwinp")[0].value),
                 }
-            }
+                if (adminLogin === true) {
+                    body['admin'] = '1'
+                }
+                var xhttp = new XMLHttpRequest();
+                xhttp.open("POST", theUrl, false);
+                xhttp.setRequestHeader("Content-Type", "Application/json");
+                xhttp.send(JSON.stringify(body));
+                if (xhttp.status === 200) {
+                    console.log(xhttp.responseText);
+                    window.location.href = "?hash=" + xhttp.responseText + "?username=" + btoa(document.getElementsByClassName("usrinp")[0].value);
+                } else if (xhttp.status !== 200 && xhttp.readyState === 4) {
+                    console.log(xhttp.status);
+                    if (xhttp.status === 403) {
+                        openmodal(xhttp.responseText);
+                    } else {
+                        openmodal("Something went wrong\nTry Again!");
+                    }
+                }
 
+            } catch (ex) {
+                openmodal(`Exception : ${ex.message}`)
+            }
         }
 
 
