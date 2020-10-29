@@ -3,7 +3,7 @@ import * as fs from "fs";
 import {Request, Response} from "express";
 import {config} from "./configHandler";
 import {sendFile} from "./wsutils";
-import {btoa,atob} from "./wsutils";
+import {atob,btoa} from "./wsutils";
 
 const auth = require("./auth-handler");
 export let hashes_arr = {}

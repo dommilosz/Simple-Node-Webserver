@@ -22,18 +22,16 @@ export function replaceAll(content: string, s: string, s2: string) {
 export function btoa(obj){
     if(!obj)return ;
     if(typeof(obj)=="string"){
-        let content = JSON.parse(JSON.stringify(obj))
-        return Buffer.from(content, 'binary').toString('base64')
+        return btoa_i(obj)
     }else {
         return btoa(JSON.stringify(obj))
     }
 }
 export function atob(obj:string){
     if(!obj)return ;
-    let result = (Buffer.from(obj, 'base64').toString('binary'))
+    return require('atob')(obj)
+}
 
-    try{
-        return JSON.parse(result)
-    }catch {}
-    return result;
+function btoa_i(str:string) {
+    return Buffer.from(str).toString("base64");
 }
