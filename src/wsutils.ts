@@ -21,7 +21,7 @@ export function replaceAll(content: string, s: string, s2: string) {
 
 export function btoa(obj){
     if(!obj)return ;
-    let content = typeof(obj)=="string"?obj:JSON.stringify(obj)
+    let content = typeof(obj)=="string"?JSON.parse(JSON.stringify(obj)):JSON.stringify(obj)
     return Buffer.from(content, 'binary').toString('base64')
 }
 export function atob(obj:string){
