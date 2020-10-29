@@ -65,12 +65,7 @@ $(document).ready(function () {
 $("#reload").onclick = function () {
     getData()
 }
-
 function showObjects(key) {
-    if (key === shown) {
-        showObjects('')
-        return;
-    }
     shown = key;
     document.querySelectorAll('.cat_objs').forEach(el => {
         el.innerHTML = ""
@@ -81,17 +76,39 @@ function showObjects(key) {
     keyjson.forEach((el, i) => {
         if (!el) el = {body: 'undefined'}
         obj = document.createElement('div')
+        obj_p = document.createElement('div')
 
         let txt = JSON.stringify(el.body)
-        obj.innerHTML = `[${i}] : ${txt.substring(0, 200)}`
+        let displayTxt = txt.substring(0, 200)
+        if(el.body.username){
+            displayTxt = el.body.username
+        }
+        obj_p.innerHTML = `[${i}] : ${displayTxt}`
         obj.className = "cat_obj"
-        obj.onclick = function () {
+        obj_p.className = "el_det"
+        obj_p.onclick = function () {
             showObjPopup(el, key, i)
         }
+        let btn = document.createElement('button')
+
         objs.append(obj)
+        obj.append(obj_p)
+        obj.append(btn)
+        btn.innerHTML = "X"
+        btn.className = "delBtn"
+        btn.onclick = function () {
+            if (confirm(`Do You Want to delete ${key} [${i}] item?`)) {
+                let req = new XMLHttpRequest()
+                req.open("GET", `/Data/delitem/${key}/${i}?hash=${GetParams().hash}?username=${GetParams().username}`)
+                req.send(null)
+                setTimeout(function(){
+                    getData();
+                    showObjects(shown)
+                },500)
+            }
+        }
     })
 }
-
 function showObjPopup(obj_json, cat_a, index) {
     function Do_delete() {
         if (confirm(`Do You Want to delete ${cat_a} [${index}] item?`)) {
