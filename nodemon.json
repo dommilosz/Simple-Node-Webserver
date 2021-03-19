@@ -1,0 +1,12 @@
+
+{
+  "execMap": {
+    "js": "node",
+    "ts": "ts-node"
+  },
+  "watch": [
+    "app",
+    "config"
+  ],
+  "ext": "js,ts"
+}

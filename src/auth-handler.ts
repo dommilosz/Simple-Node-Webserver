@@ -1,104 +1,172 @@
-import {GetParams, server} from "./webserver";
-import * as fs from "fs";
+import {allPermissions, allPermissionsTree, Endpoint, GetParams} from "./webserver";
 import {Request, Response} from "express";
 import {config} from "./configHandler";
-import {sendFile} from "./wsutils";
-import {atob,btoa} from "./wsutils";
+import {atob, btoa, consoleLog, sendCompletion, sendFile, sendJSON, sendText} from "./wsutils";
 
 const auth = require("./auth-handler");
 export let hashes_arr = {}
-export let one_time_hashes = {}
 
 export let password = config.password;
 export let admin_password = config.admin_password
 
-server.post("/auth", function (req: Request, res: Response) {
+export let checkUsernameOverride;
+export function checkUsername (username){
+    if(checkUsernameOverride){
+        return checkUsernameOverride(username);
+    }
+    return true;
+}
+
+export function overrideCheckUsername(cb){
+    checkUsernameOverride = cb;
+}
+
+export let checkUserPermsOverride;
+export function checkUserPerms (username,password){
+    if(checkUserPermsOverride){
+        return checkUserPermsOverride(username,password);
+    }
+    if(password==admin_password){
+        return "*.*";
+    }
+    if(password==password){
+        return "user.*";
+    }
+}
+
+export function overrideCheckUserPerms(cb){
+    checkUserPermsOverride = cb;
+}
+
+export function returnPassword(req, admin) {
+    if (returnPassCallback) return returnPassCallback(req, admin);
+
+    if (admin) return admin_password;
+    return password;
+}
+
+export function getHashFromReq(req){
+    let params: any = GetParams(req)
+    return params.hash;
+}
+
+export function checkPermission(req,perm){
+    if(perm.split('.')[0]=="default")return true;
+    let hash = getHash(getHashFromReq(req));
+    if(!hash)return false;
+    let canAccess = false;
+    let params = GetParams(req);
+    let perms = checkUserPerms(atob(params.username),params.password);
+    perms.split(';').forEach(el=>{
+        if(checkPerm(el,perm))canAccess = true;
+    })
+    return canAccess;
+}
+
+export function checkPerm(uperm, perm) {
+    let perma = perm.split('.')
+    let uperma = uperm.split('.')
+    let boolperms = true;
+    let forceperms = false;
+
+    if(perma[0]=="default")return true;
+
+    perma.forEach((el, i) => {
+        if (boolperms && uperma[i] == "*") {
+            boolperms = true;
+            forceperms = true;
+        }
+        if (el != uperma[i]) {
+            boolperms = false;
+        }
+
+    })
+    return (boolperms || forceperms)
+}
+
+Endpoint.get("/checkLogin", function (req: Request, res: Response) {
+    let perms = "user.*";
+    try{
+        let params = GetParams(req);
+        perms = checkUserPerms(atob(params.username),params.password);
+    }catch {}
+
+
+    sendJSON(res, ({permissions:perms, login: checkLogin(req)}), 200)
+    return;
+});
+
+Endpoint.get("/logout", function (req: Request, res: Response) {
+    if (checkLogin(req)) {
+        res.cookie('hash', '', {maxAge: 360000});
+        res.cookie('username', '', {maxAge: 360000});
+        sendText(res, "Logged out", 200)
+
+        let params: any = GetParams(req)
+        let hash = params.hash;
+        setProp(hash, "expired", true)
+        setProp(hash, "lastUpdated", Math.round(+new Date() / 1000) - (config.auth.token_lifetime + 60))
+        checkHashes()
+
+        return;
+    }
+});
+
+Endpoint.post("/auth", function (req: Request, res: Response) {
     let params: any = req.body
     if (params.username && params.username.trim() != "") {
         params.username = atob(params.username)
         params.password = atob(params.password)
-        if (auth.checkTimeout(req)) {
-            res.writeHead(403, {"Content-Type": "text/json"});
-            res.write(`SLOW DOWN! - Wait ${auth.checkTimeout(req)}ms`);
-            res.end();
-            return;
-        }
-        let hash_redeem = redeemOneTimeToken(params.password, params.username);
-        if (hash_redeem) {
-            if (req.url.includes('?admin=1')) {
-                if(!getHash(hash_redeem).isAdmin){
-                    res.writeHead(403, {"Content-Type": "text/json"});
-                    res.write("YOU NEED TO LOGIN AS ADMIN");
-                    res.end();
-                    console.log(
-                        `"${params.username}" tried to login with user's password`
-                    );
-                }else {
-                    res.writeHead(200, {"Content-Type": "text/json"});
-                    res.write(hash_redeem);
-                    res.end()
-                }
-            }else {
-                res.writeHead(200, {"Content-Type": "text/json"});
-                res.write(hash_redeem);
-                res.end();
-            }
-        } else if ((params.password && params.password == password)) {
-            if (req.url.includes('?admin=1')) {
-                res.writeHead(403, {"Content-Type": "text/json"});
-                res.write("YOU NEED TO LOGIN AS ADMIN");
-                res.end();
-                console.log(
-                    `"${params.username}" tried to login with user's password`
-                );
-            } else {
-                let r = AddHash(params.username, false);
-                res.writeHead(200, {"Content-Type": "text/json"});
-                res.write(r);
-                res.end();
-            }
-
-
-        } else if ((params.password && params.password == admin_password)) {
-            let r = AddHash(params.username, true);
-            res.writeHead(200, {"Content-Type": "text/json"});
-            res.write(r);
-            res.end();
-        } else {
-            res.writeHead(403, {"Content-Type": "text/json"});
-            res.write("INVALID PASSWORD");
-            res.end();
-            console.log(
-                `"${params.username}" tried to enter invalid password "${params.password}".`
-            );
-            auth.setConnTimeout(req, config.auth.invalidTimeout)
-        }
-    } else {
-        res.writeHead(403, {"Content-Type": "text/json"});
-        res.write("INVALID USERNAME (IT CAN BE ANYTHING)");
-        res.end();
-
+        Login(params.username, params.password, req, res)
+        return;
     }
+    sendCompletion(res, `INVALID PASSWORD`, true, 403)
+    auth.setConnTimeout(req, config.auth.invalidTimeout)
 });
 
-function AddHash(username, isAdmin) {
+export function Login(username, password, req, res) {
+    let admin = req.url.includes('?admin=1');
+    let loggedAsAdmin = false;
+
+    if (!password||password.length < 1) {
+        sendCompletion(res, `INVALID PASSWORD`, true, 403)
+        return;
+    }
+    if (auth.checkTimeout(req)) {
+        sendCompletion(res, `SLOW DOWN! - Wait ${auth.checkTimeout(req)}ms`, true, 403)
+        return;
+    }
+    if (!username || username.length < 1 || (!username && username.trim() == "")||!checkUsername(username)) {
+
+        sendCompletion(res, `INVALID USERNAME`, true, 403)
+        return;
+    }
+    let requiredPassword = returnPassword(req, false)
+    let requiredPasswordAdmin = returnPassword(req, true)
+    if ((requiredPasswordAdmin != password) && (requiredPassword != password)) {
+        sendCompletion(res, `INVALID PASSWORD`, true, 403)
+        consoleLog(`[INVALID_PASS] - "${password}" - USER: "${username}"`)
+        auth.setConnTimeout(req, config.auth.invalidTimeout)
+        return;
+    }
+    let r = AddHash(username, password);
+    sendJSON(res, {text: "Success", error: false, hash: r}, 200)
+}
+
+export function AddHash(username, password) {
     let hash = genHash()
-    console.log("hash : ", hash, "  Username : ", username);
     let ts = Math.round(new Date().getTime() / 1000);
-    let hash_obj = {
-        isAdmin: false,
+    hashes_arr[hash] = {
         lastUpdated: ts,
         username: username,
         hash: hash,
         expired: false,
         type: "hash"
-    };
-    if (isAdmin) hash_obj.isAdmin = true;
-    hashes_arr[hash] = hash_obj
+    }
     return hash;
 }
 
-function genHash() {
+export function genHash() {
     let r1 = Math.random().toString(36).substring(7);
     let r2 = Math.random().toString(36).substring(7);
     let r3 = Math.random().toString(36).substring(7);
@@ -115,34 +183,22 @@ function CheckHash(hash, username) {
     let ts = Math.round(new Date().getTime() / 1000);
     if (hashes_arr[hash]) {
         if (hashes_arr[hash].username != username) {
-            console.log(
-                `Validating hash "${hash}" for username "${username}". INVALID : USERNAME DOESN'T MATCH`
-            );
+            consoleLog(`[HASH - WRONG_USERNAME] - "${hash}" USER: "${username}" SHOULD BE: "${hashes_arr[hash].username}"`)
             return false;
         }
         let updated = ts - hashes_arr[hash].lastUpdated;
         if (updated < config.auth.token_lifetime) {
-            if (hashes_arr[hash].isAdmin) {
-                console.log(
-                    `Validating hash "${hash}" for username "${username}". VALID [ADMIN]`
-                );
-            } else {
-                console.log(
-                    `Validating hash "${hash}" for username "${username}". VALID`
-                );
-            }
+            consoleLog(`[HASH - VALID    ] - [${hashes_arr[hash].isAdmin ? "ADMIN" : "USER "}] - "${hash}" USER: "${username}"`)
 
             return true;
         } else {
-            console.log(
-                `Validating hash "${hash}" for username "${username}". INVALID : EXPIRED`
-            );
+            consoleLog(`[HASH - EXPIRED  ] - [${hashes_arr[hash].isAdmin ? "ADMIN" : "USER "}] - "${hash}" USER: "${username}"`)
+
             return false;
         }
     } else {
-        console.log(
-            `Validating hash "${hash}" for username "${username}". INVALID : HASH NOT FOUND`
-        );
+        consoleLog(`[HASH - NOT_FOUND] - [     ] - "${hash}" USER: "${username}"`)
+
         return false;
     }
 }
@@ -169,19 +225,19 @@ export function setConnTimeout(req, number) {
 export function checkLogin(req) {
     let params: any = GetParams(req)
     params.username = atob(params.username)
-    return (params.hash && params.username && params.username.trim() !== "" && Check_UHash(params.hash, params.username)) || password == "";
+    return (params.hash && params.username && params.username.trim() !== "" && Check_UHash(params.hash, params.username)) || returnPassword(req, false) === "";
 }
 
-function Check_UHashAdmin(hash: any, username: any) {
-    if (!Check_UHash(hash, username)) return false;
-    return hashes_arr[hash].isAdmin;
-
-}
-
-export function checkLoginAdmin(req) {
+export function getUsername(req) {
     let params: any = GetParams(req)
     params.username = atob(params.username)
-    return (params.hash && params.username && params.username.trim() !== "" && Check_UHashAdmin(params.hash, params.username)) || password == "";
+    return params.username;
+}
+
+let returnPassCallback = undefined;
+
+export function overrideReturnPassword(callback) {
+    returnPassCallback = callback;
 }
 
 export function checkTimeout(req) {
@@ -190,28 +246,18 @@ export function checkTimeout(req) {
     return timeouts[req.ip] - now
 }
 
-export function sendFileAuth(req, res, path, status) {
-    if (checkLogin(req)) {
-        sendFile(req, res, path, status)
-    } else {
-        sendLoginPage(req, res)
-    }
-}
+export let loginPageLoc = './src/login.html';
 
-export function sendFileAuthAdmin(req, res, path, status) {
-    if (checkLoginAdmin(req)) {
-        sendFile(req, res, path, status)
+export function mixinSetLoginPage(page: string) {
+    if (!page) {
+        loginPageLoc = './src/login.html';
     } else {
-        sendAdminLoginPage(req, res)
+        loginPageLoc = page;
     }
 }
 
 export function sendLoginPage(req, res) {
-    sendFile(req,res,'./src/login.html',200,{admin:false})
-}
-
-export function sendAdminLoginPage(req, res) {
-    sendFile(req,res,'./src/login.html',200,{admin:true})
+    sendFile(req, res, loginPageLoc, 200, {admin: false})
 }
 
 export function checkHashes() {
@@ -224,92 +270,17 @@ export function checkHashes() {
         } else {
             hashes_arr[hash].expired = true;
         }
-        if(getUsedToken(hash)){
-            hashes_arr[hash].usedHashOTP = getUsedToken(hash);
-        }
     })
-
-    Object.keys(one_time_hashes).forEach(hash => {
-        one_time_hashes[hash]['fromLastUpdate'] = Math.round((+new Date() / 1000) - one_time_hashes[hash].lastUpdated)
-        let ts = Math.round(new Date().getTime() / 1000);
-        let updated = ts - one_time_hashes[hash].lastUpdated;
-        if (updated < config.auth.token_lifetime) {
-
-        } else {
-            one_time_hashes[hash].expired = true;
-        }
-    })
-
 }
-
-export function redeemOneTimeToken(token, username) {
-    if (one_time_hashes[token]) {
-        if (one_time_hashes[token].expired) {
-            return false;
-        } else if (one_time_hashes[token].used) {
-            return false;
-        } else {
-            one_time_hashes[token].used = true;
-            one_time_hashes[token].usedBy = username;
-            let hash = AddHash(username, one_time_hashes[token].isAdmin);
-            one_time_hashes[token].usedByHash = hash;
-            console.log(`${username} redeemed otp : ${token}`)
-            return hash
-        }
-    }
-    return false
-}
-
-
-export function createOneTime(isAdmin) {
-    let ts = +new Date();
-    let hash = genHash();
-    one_time_hashes[hash] = {
-        isAdmin: isAdmin,
-        lastUpdated: Math.round(ts / 1000),
-        hash: hash,
-        expired: false,
-        used: false,
-        fromLastUpdate: Math.round(ts / 1000),
-        type: "otp",
-    }
-    return hash;
-}
-
-server.get("/getOneTime", function (req: Request, res: Response) {
-    if (checkLoginAdmin(req)) {
-        res.writeHead(200)
-        res.write(createOneTime(req.url.includes("?admin=1")))
-        res.end()
-    } else {
-        sendAdminLoginPage(req, res);
-    }
-})
 
 export function getHash(hash) {
-    if (one_time_hashes[hash]) {
-        return one_time_hashes[hash]
-    } else {
-        return hashes_arr[hash]
-    }
+    return hashes_arr[hash]
 }
 
-export function setProp(hash,prop,value) {
-    if (one_time_hashes[hash]) {
-        one_time_hashes[hash][prop] = value;
-    } else {
-        hashes_arr[hash][prop] = value;
-    }
+export function setProp(hash, prop, value) {
+    hashes_arr[hash][prop] = value;
 }
 
-export function getUsedToken(hash){
-    let hash_o = undefined
-    if(hashes_arr[hash]){
-        Object.keys(one_time_hashes).forEach(key=>{
-            if(one_time_hashes[key].usedByHash&&one_time_hashes[key].usedByHash==hash){
-                hash_o = key
-            }
-        })
-    }
-    return hash_o;
-}
+Endpoint.get("/permsRaw",(req,res)=>{
+    sendJSON(res,(allPermissionsTree),200)
+},"auth.perms.see")

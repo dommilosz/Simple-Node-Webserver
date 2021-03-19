@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>ADMIN PANEL</title>
+    <script src="/jsu.js"></script>
 </head>
 <body>
     <script src="/admin.js"></script>
-    <button onclick="location.href=`/ViewData?hash=${GetParams().hash}?username=${GetParams().username}`">DATA</button>
-    <button onclick="location.href=`/ViewHashes?hash=${GetParams().hash}?username=${GetParams().username}`">HASHES</button>
+    <button onclick="location.href=`/ViewData${createURLWithHash()}`">DATA</button>
+    <button onclick="location.href=`/ViewHashes${createURLWithHash()}`">HASHES</button>
 </body>
 </html>

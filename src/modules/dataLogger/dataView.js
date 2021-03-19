@@ -2,7 +2,7 @@ shown = ""
 
 function getData() {
     let xhr = new XMLHttpRequest();
-    xhr.open('GET', `/data?hash=${GetParams().hash}?username=${GetParams().username}`, false)
+    xhr.open('GET', `/data${createURLWithHash()}`, false)
     xhr.send(null)
     json = JSON.parse(xhr.responseText)
     let results = $('#results')
@@ -35,28 +35,6 @@ function getData() {
 }
 
 getData()
-
-
-function GetParams(){
-    let url = location.href
-    let params = {};
-
-    let regex = /\?[a-z0-9]*=[^?]*/gm;
-    let m;
-    while ((m = regex.exec(url)) !== null) {
-        if (m.index === regex.lastIndex) {
-            regex.lastIndex++;
-        }
-        m.forEach((match, groupIndex) => {
-            match = match.replace('?','')
-            let matcharr = match.split('=')
-            matcharr.shift()
-            params[match.split('=')[0]] = matcharr.join('=')
-        });
-    }
-
-    return params
-}
 
 $(document).ready(function () {
     getData()
@@ -99,7 +77,7 @@ function showObjects(key) {
         btn.onclick = function () {
             if (confirm(`Do You Want to delete ${key} [${i}] item?`)) {
                 let req = new XMLHttpRequest()
-                req.open("GET", `/Data/delitem/${key}/${i}?hash=${GetParams().hash}?username=${GetParams().username}`)
+                req.open("GET", `/Data/delitem/${key}/${i}${createURLWithHash()}`)
                 req.send(null)
                 setTimeout(function(){
                     getData();
@@ -113,7 +91,7 @@ function showObjPopup(obj_json, cat_a, index) {
     function Do_delete() {
         if (confirm(`Do You Want to delete ${cat_a} [${index}] item?`)) {
             let req = new XMLHttpRequest()
-            req.open("GET", `/Data/delitem/${cat_a}/${index}?hash=${GetParams().hash}?username=${GetParams().username}`)
+            req.open("GET", `/Data/delitem/${cat_a}/${index}${createURLWithHash()}`)
             req.send(null)
             showObjPopup('')
             setTimeout(getData,500)
@@ -151,7 +129,7 @@ function showObjPopup(obj_json, cat_a, index) {
     popup.append(closebtn)
 
     let frame = document.createElement('iframe')
-    frame.src = `/ViewData/item/${cat_a}/${index}?hash=${GetParams().hash}?username=${GetParams().username}`
+    frame.src = `/ViewData/item/${cat_a}/${index}${createURLWithHash()}`
     vals.append(frame)
     frame.className = 'result'
 

@@ -2,6 +2,7 @@
 <head>
     <title>Collected Data</title>
     <script src="http://warfares.github.io/pretty-json/libs/jquery-1.11.1.min.js"></script>
+    <script src="/jsu.js"></script>
     <script src="/viewdata.js"></script>
     <style>
         .result {
@@ -88,7 +89,7 @@
 
 </script>
 <button id="reload" onclick="getData()">RELOAD</button><br>
-<button onclick="location.href=`/admin?hash=${GetParams().hash}?username=${GetParams().username}`">ADMIN</button>
+<button onclick="location.href=`/admin${createURLWithHash()}`">ADMIN</button>
 
 <span id="results"></span>
 <div class="obj_popup"></div>

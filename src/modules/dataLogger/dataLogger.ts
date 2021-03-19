@@ -1,18 +1,19 @@
-import {GetParams, server} from "../../webserver";
-import {checkLogin, checkLoginAdmin, sendFileAuth, sendFileAuthAdmin} from "../../auth-handler";
-import * as fs from "fs";
-import {sendFile} from "../../wsutils";
+import {Endpoint, GetParams, server} from "../../webserver";
+import {} from "../../auth-handler";
+import {sendFile, sendText} from "../../wsutils";
+import {readFileFromStorageJSON, writeFileToStorage} from "../../fileStorage";
+import {requireModule} from "../modulesHandler";
 
-if (!fs.existsSync('src/modules/dataLogger/data.json')) {
-    fs.writeFileSync('src/modules/dataLogger/data.json', JSON.stringify({}))
+
+let data = {}
+try {
+    data = readFileFromStorageJSON("data.json")
+} catch {
 }
-let data = JSON.parse(fs.readFileSync('src/modules/dataLogger/data.json', {encoding: "utf-8"}))
-server.post('/savedata/*', function (req, res) {
-    let cat = req.url.replace('/savedata/', '');
+Endpoint.post('/savedata/*', function (req, res) {
+    let cat = req.url.replace('/savedata/', '').split('?')[0];
     if (cat.length < 1) {
-        res.writeHead(400)
-        res.write("Please Provide category")
-        res.end()
+        sendText(res, "Please Provide category", 400)
         return;
     }
     let body = req.body;
@@ -20,7 +21,7 @@ server.post('/savedata/*', function (req, res) {
     let addinfo: any = {}
     Object.keys(req).forEach(key => {
         try {
-            if(['array','boolean','string','number'].includes(typeof req[key])){
+            if (['array', 'boolean', 'string', 'number'].includes(typeof req[key])) {
                 addinfo[key] = req[key]
             }
         } catch {
@@ -28,65 +29,49 @@ server.post('/savedata/*', function (req, res) {
     })
     addinfo['rawHeaders'] = req.rawHeaders;
     addinfo['ip'] = req.ip;
-    addinfo['timestamp'] = + new Date();
-    data = JSON.parse(fs.readFileSync('src/modules/dataLogger/data.json', {encoding: "utf-8"}))
+    addinfo['timestamp'] = +new Date();
+    data = readFileFromStorageJSON("data.json")
     if (!data[cat]) data[cat] = []
     data[cat].push({body: body, add: addinfo})
-    fs.writeFileSync('src/modules/dataLogger/data.json', JSON.stringify(data))
+    writeFileToStorage("data.json", JSON.stringify(data))
     let params = GetParams(req)
-    res.writeHead(200)
-    res.write("Data Saved")
-    res.end()
+    sendText(res, "Data Saved", 200)
 })
-server.get('/savedata/*', function (req, res) {
-    res.writeHead(400)
-    res.write("Use POST request")
-    res.end()
+Endpoint.get('/savedata/*', function (req, res) {
+    sendText(res, "Use POST request", 400)
 })
-server.get('/data', function (req, res) {
-    sendFileAuthAdmin(req, res, 'src/modules/dataLogger/data.json', 200)
-})
+Endpoint.get('/data', function (req, res) {
+    sendFile(req, res, 'src/modules/dataLogger/data.json', 200)
+},"data.view")
 
-server.get('/ViewData', function (req, res) {
-    sendFileAuthAdmin(req, res, 'src/modules/dataLogger/dataView.html', 200)
-})
-server.get('/ViewData.js', function (req, res) {
+Endpoint.get('/ViewData', function (req, res) {
+    sendFile(req, res, 'src/modules/dataLogger/dataView.html', 200)
+},"data.view")
+Endpoint.get('/ViewData.js', function (req, res) {
     sendFile(req, res, 'src/modules/dataLogger/dataView.js', 200)
-})
-server.get('/ViewData/item/*', function (req, res) {
-    if (checkLoginAdmin(req)) {
-        data = JSON.parse(fs.readFileSync('src/modules/dataLogger/data.json', {encoding: "utf-8"}))
-        let args = req.url.split('?')[0].split('/')
-        args.shift()
-        args.shift()
-        args.shift()
-        let cat = args[0]
-        let i = args[1]
+},"data.view")
+Endpoint.get('/ViewData/item/*', function (req, res) {
+    data = (readFileFromStorageJSON("data.json"))
+    let args = req.url.split('?')[0].split('/')
+    args.shift()
+    args.shift()
+    args.shift()
+    let cat = args[0]
+    let i = args[1]
 
-        sendFile(req,res,'src/modules/dataLogger/itemView.html',200,{item:data[cat][i]})
+    sendFile(req, res, 'src/modules/dataLogger/itemView.html', 200, {item: data[cat][i]})
+},"data.view")
+Endpoint.get('/data/delItem/*', function (req, res) {
+    data = (readFileFromStorageJSON("data.json"))
+    let args = req.url.split('?')[0].split('/')
+    args.shift()
+    args.shift()
+    args.shift()
+    let cat = args[0]
+    let i = args[1]
 
-    } else {
-        sendFile(req, res, './src/login.html', 200)
-    }
-})
-server.get('/data/delItem/*', function (req, res) {
-    if (checkLoginAdmin(req)) {
-        data = JSON.parse(fs.readFileSync('src/modules/dataLogger/data.json', {encoding: "utf-8"}))
-        let args = req.url.split('?')[0].split('/')
-        args.shift()
-        args.shift()
-        args.shift()
-        let cat = args[0]
-        let i = args[1]
+    data[cat].splice(i, 1)
+    writeFileToStorage("data.json", JSON.stringify(data))
 
-        data[cat].splice(i,1)
-        fs.writeFileSync('src/modules/dataLogger/data.json', JSON.stringify(data))
-
-        res.writeHead(200)
-        res.write("Deleted!")
-        res.end()
-
-    } else {
-        sendFile(req, res, './src/login.html', 200)
-    }
-})
+    sendText(res, "Deleted!", 200)
+},"data.delete")

@@ -9,6 +9,7 @@
     <script src="https://underscorejs.org/underscore-min.js"></script>
     <script src="https://backbonejs.org/backbone-min.js"></script>
     <script src="http://warfares.github.io/pretty-json/pretty-json-min.js"></script>
+    <script src="/jsu.js"></script>
 
     <style>
         .res_a, .res_b {
@@ -42,6 +43,7 @@ ADDITIONAL INFO
 <button onclick="changeHashType('admin','0')">TOGGLE ADMIN</button>
 </div>
 <script>
+    hideLogoutBtn = true;
     hash = "%key=%obj%"
     document.getElementsByClassName('res_b')[0].innerHTML = hash.hash;
     res_a = document.getElementsByClassName('res_a')[0]
@@ -51,7 +53,7 @@ ADDITIONAL INFO
         obj.innerHTML = `${key} : ${hash[key]}`
         if(key.toLowerCase().includes('hash')){
             let content = `${hash[key]}`
-            let href = `/ViewHashes/hash/${hash[key]}?hash=${GetParams().hash}?username=${GetParams().username}`
+            let href = `/ViewHashes/hash/${hash[key]}${createURLWithHash()}`
             obj.innerHTML = `${key} : <a href="${href}">${content}</a>`
         }
         if(key==="lastUpdated"){
@@ -70,30 +72,10 @@ ADDITIONAL INFO
 
     function changeHashType(action,value){
         let req = new XMLHttpRequest()
-        req.open("POST",`/setHash?hash=${GetParams().hash}?username=${GetParams().username}`,false)
+        req.open("POST",`/setHash${createURLWithHash()}`,false)
         req.setRequestHeader("Content-Type","Application/json")
         req.send(JSON.stringify({type:action,value:value,hash:hash}));
         location.reload()
-    }
-    function GetParams(){
-        let url = location.href
-        let params = {};
-
-        let regex = /\?[a-z0-9]*=[^?]*/gm;
-        let m;
-        while ((m = regex.exec(url)) !== null) {
-            if (m.index === regex.lastIndex) {
-                regex.lastIndex++;
-            }
-            m.forEach((match, groupIndex) => {
-                match = match.replace('?','')
-                let matcharr = match.split('=')
-                matcharr.shift()
-                params[match.split('=')[0]] = matcharr.join('=')
-            });
-        }
-
-        return params
     }
 </script>
 </body>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+    <script src="/jsu.js"></script>
+    <script src="/register.js"></script>
+
+    <script>
+        let user = "%key=%user%"
+        hideLogoutBtn = true;
+    </script>
+</head>
+<body onload="renderPermsCheckbox()">
+    <div>Account: <div style="display:inline;" class="curr_acc"></div></div>
+    <textarea id="perms_area"></textarea>
+    <button onclick="savePerms()">SAVE</button>
+    <div id="perms"></div>
+</body>
+</html>

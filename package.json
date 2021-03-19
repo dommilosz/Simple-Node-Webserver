@@ -2,11 +2,11 @@
   "name": "2bored2wait",
   "version": "1.0.0",
   "description": "A proxy to wait out 2b2t.org's way too long queue.",
-  "main": "src/main.js",
+  "main": "src/main.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node.exe --require ts-node/register src/main.ts",
-    "debug": "node --inspect --require ts-node/register src/main.ts"
+    "start": "echo \"Building\" && tsc && echo \"Running\" && node --require ts-node/register src/main.ts",
+    "debug": "nodemon"
   },
   "repository": {
     "type": "git",
@@ -33,11 +33,13 @@
     "ts-loader": "^8.0.7",
     "types": "^0.1.1",
     "typescript": "^4.0.3",
-    "webpack": "^5.2.0"
+    "webpack": "^5.2.0",
+    "nodemon": "^2.0.7",
+    "webhook-discord": "^3.7.7"
   },
   "devDependencies": {
+    "cookie-parser": "^1.4.5",
     "ts-node": "^9.0.0",
     "webpack-cli": "^4.1.0"
-  },
-  "type": "module"
+  }
 }

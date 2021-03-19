@@ -1,4 +1,6 @@
 import * as fs from "fs";
+import {readFileFromStorage, readFileFromStorageJSON, writeFileToStorage} from "./fileStorage";
+
 export let config:{
     admin_password: string;
     auth: {
@@ -6,29 +8,39 @@ export let config:{
         token_lifetime:number};
     ports: {web:number},
     openBrowserOnStart:boolean,
-    password:string
+    password:string,
+    showModuleLoadingErrors:boolean
 };
-try{
-let json = JSON.parse(fs.readFileSync('src/config.json',{encoding:'utf-8'}));
-config = json;
-}catch {
-    config = {
-        auth: {token_lifetime: 60,invalidTimeout:10000},
-        "ports":{
-            "web":8080
-        },
-        "openBrowserOnStart": false,
-        "password":"admin",
-        "admin_password":"admin123"
-    }
-    console.log("Error while loading config. Using default options!")
-    if(!fs.existsSync('src/config.json',)){
-        fs.writeFileSync('src/config.json',JSON.stringify(config,null,4),{encoding:'utf-8'})
-        console.log("Creating config file.")
-    }
+
+export const defaultConfig = {
+    auth: {token_lifetime: 60,invalidTimeout:10000},
+    "ports":{
+        "web":8080
+    },
+    "openBrowserOnStart": false,
+    "password":"admin",
+    "admin_password":"admin123",
+    "showModuleLoadingErrors":false,
 }
+
+try{
+    config = readFileFromStorageJSON('config.json');
+}catch {
+    config = defaultConfig;
+    console.log("Error while loading config. Using default options!")
+    writeFileToStorage('config.json',JSON.stringify(config,null,4))
+    console.log("Creating config file.")
+
+}
+
+Object.keys(defaultConfig).forEach(key=>{
+    if(!config[key]){
+        config[key] = defaultConfig[key]
+    }
+    writeFileToStorage('config.json',JSON.stringify(config,null,4))
+})
 
 export function setConfig(key,val){
     config[key] = val;
-    fs.writeFileSync('src/config.json',JSON.stringify(config,null,4),{encoding:'utf-8'})
+    writeFileToStorage('config.json',JSON.stringify(config,null,4))
 }
