@@ -38,8 +38,8 @@ export function overrideCheckUserPerms(cb){
     checkUserPermsOverride = cb;
 }
 
-export function returnPassword(req, admin) {
-    if (returnPassCallback) return returnPassCallback(req, admin);
+export function returnPassword(req,username, admin) {
+    if (returnPassCallback) return returnPassCallback(req,username, admin);
 
     if (admin) return admin_password;
     return password;
@@ -124,33 +124,40 @@ Endpoint.post("/auth", function (req: Request, res: Response) {
     auth.setConnTimeout(req, config.auth.invalidTimeout)
 });
 
-export function Login(username, password, req, res) {
+export function LoginRaw(username, password, req, res) {
     let admin = req.url.includes('?admin=1');
     let loggedAsAdmin = false;
 
     if (!password||password.length < 1) {
-        sendCompletion(res, `INVALID PASSWORD`, true, 403)
-        return;
+        return[`INVALID PASSWORD`, true, 403]
+
     }
     if (auth.checkTimeout(req)) {
-        sendCompletion(res, `SLOW DOWN! - Wait ${auth.checkTimeout(req)}ms`, true, 403)
-        return;
+        return[`SLOW DOWN! - Wait ${auth.checkTimeout(req)}ms`, true, 403]
     }
     if (!username || username.length < 1 || (!username && username.trim() == "")||!checkUsername(username)) {
 
-        sendCompletion(res, `INVALID USERNAME`, true, 403)
-        return;
+        return[`INVALID USERNAME`, true, 403]
     }
-    let requiredPassword = returnPassword(req, false)
-    let requiredPasswordAdmin = returnPassword(req, true)
+    let requiredPassword = returnPassword(req,username, false)
+    let requiredPasswordAdmin = returnPassword(req, username,true)
     if ((requiredPasswordAdmin != password) && (requiredPassword != password)) {
-        sendCompletion(res, `INVALID PASSWORD`, true, 403)
         consoleLog(`[INVALID_PASS] - "${password}" - USER: "${username}"`)
         auth.setConnTimeout(req, config.auth.invalidTimeout)
-        return;
+        return[`INVALID PASSWORD`, true, 403]
     }
     let r = AddHash(username, password);
-    sendJSON(res, {text: "Success", error: false, hash: r}, 200)
+    res.cookie('hash', r, {maxAge: 360000});
+    return [r,false,200]
+}
+
+export function Login(username, password, req, res) {
+    let resp = LoginRaw(username,password,req,res);
+    if(resp[1]){
+        sendCompletion(res, resp[0], true, resp[2])
+    }else{
+        sendJSON(res, {text: "Success", error: false, hash: resp[0]}, resp[2])
+    }
 }
 
 export function AddHash(username, password) {
@@ -225,7 +232,7 @@ export function setConnTimeout(req, number) {
 export function checkLogin(req) {
     let params: any = GetParams(req)
     params.username = atob(params.username)
-    return (params.hash && params.username && params.username.trim() !== "" && Check_UHash(params.hash, params.username)) || returnPassword(req, false) === "";
+    return (params.hash && params.username && params.username.trim() !== "" && Check_UHash(params.hash, params.username)) || returnPassword(req,params.username, false) === "";
 }
 
 export function getUsername(req) {

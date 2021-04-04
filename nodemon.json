@@ -5,8 +5,7 @@
     "ts": "ts-node"
   },
   "watch": [
-    "app",
-    "config"
+    "src"
   ],
   "ext": "js,ts"
 }

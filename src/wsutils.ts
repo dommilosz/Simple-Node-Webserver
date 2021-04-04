@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import {checkLogin} from "./auth-handler";
+import request from "sync-request";
 import mime = require('mime');
 
 export function sendFile(req,res,path:string,status:number,args = {}){
@@ -58,4 +59,8 @@ export function sendJSON(res,json,code){
 
 export function sendCompletion(res,text,error,code){
     sendJSON(res,{error:error,text:text},code);
+}
+
+export function XHR_GET(url) {
+    return request("GET",url, {json: true}).body.toString();
 }

@@ -1,6 +1,6 @@
 import {config} from "./configHandler";
 import {json, Request, Response} from "express";
-import {sendFile, sendText} from "./wsutils";
+import {sendFile, sendText,atob,btoa} from "./wsutils";
 import cookieParser from 'cookie-parser';
 
 export const server = require('express')();
@@ -73,6 +73,11 @@ export function GetParams(req) {
 
     if (!params.hash || params.hash == "undefined") params.hash = req.cookies.hash;
     if (!params.username || params.username == "undefined") params.username = req.cookies.username;
+
+    let authh = require("./auth-handler");
+    if(!params.password&&(!params.hash||!authh.getHash(params.hash))){params.password = req.cookies.password;authh.LoginRaw(atob(params.username),params.password,req,req.res)}
+
+
 
     return params
 }

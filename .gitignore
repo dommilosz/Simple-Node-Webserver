@@ -65,3 +65,9 @@ secrets.json
 
 # npm lock
 package-lock.json
+
+dist/
+
+files/
+
+.idea/

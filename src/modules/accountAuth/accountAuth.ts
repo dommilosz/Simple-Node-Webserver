@@ -20,8 +20,7 @@ try {
     accounts = {}
 }
 
-overrideReturnPassword(function (req, isAdmin) {
-    let username = (req.body.username);
+overrideReturnPassword(function (req,username, isAdmin) {
     if(username=="root"&&isAdmin){
         return config.admin_password;
     }

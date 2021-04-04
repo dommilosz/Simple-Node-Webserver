@@ -25,3 +25,7 @@ export function writeFileToStorage(name, data) {
     if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath);
     fs.writeFileSync(folderPath + name, data, {encoding: "utf8"})
 }
+export function writeFileToStorageJSON(name, data) {
+    if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath);
+    fs.writeFileSync(folderPath + name, JSON.stringify(data), {encoding: "utf8"})
+}
