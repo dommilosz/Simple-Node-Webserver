@@ -71,3 +71,5 @@ dist/
 files/
 
 .idea/
+
+pgp_key
