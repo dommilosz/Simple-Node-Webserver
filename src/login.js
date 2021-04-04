@@ -1,10 +1,11 @@
+//If enter is pressed start logging in procedure
 onkeypress = function(key){
     if(key.key==="Enter"){
         GetHash()
     }
 }
 
-
+//Handle logging in and set hash in cookies.
 function GetHash() {
     try {
         let theUrl = "/auth"
@@ -32,6 +33,8 @@ function GetHash() {
     }
 }
 
+//Check permissions level needed to acces the Endpoint and display it.
+//Remove hash from url.
 function OnLoad() {
     if (document.URL.includes("?hash="))
         window.location.href = window.location.href.split('?')[0]

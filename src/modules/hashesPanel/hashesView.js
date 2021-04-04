@@ -6,7 +6,7 @@ function getData() {
     xhr.send(null)
     let raw_json = JSON.parse(xhr.responseText)
 
-    let json = {admin: {}, user: {}, expired: {}}
+    json = {admin: {}, user: {}, expired: {}}
     Object.keys(raw_json).forEach(key => {
         let ts = +new Date()
         if (raw_json[key].expired) {
