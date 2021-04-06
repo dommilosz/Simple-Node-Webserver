@@ -75,7 +75,7 @@ function showErrModal(text) {
 }
 
 function showModalRaw(text, error) {
-    document.querySelectorAll('.modalBox').forEach(el=>{
+    document.querySelectorAll('.modalBox').forEach(el => {
         el.outerHTML = "";
     })
 
@@ -108,7 +108,7 @@ function showModalRaw(text, error) {
 
     window.onclick = function (event) {
         if (event.target === modal) {
-            document.querySelectorAll('.modalBox').forEach(el=>{
+            document.querySelectorAll('.modalBox').forEach(el => {
                 el.outerHTML = "";
             })
         }
@@ -135,9 +135,9 @@ function showStatusModal(text) {
     }
 }
 
-function createListEntry(array, name, renderDiv,objCallback) {
-    if(document.querySelector(`.cat_${name}`)){
-        document.querySelector(`.cat_${name}`).outerHTML ="";
+function createListEntry(array, name, renderDiv, objCallback) {
+    if (document.querySelector(`.cat_${name}`)) {
+        document.querySelector(`.cat_${name}`).outerHTML = "";
     }
 
     let results = document.createElement('div');
@@ -155,8 +155,8 @@ function createListEntry(array, name, renderDiv,objCallback) {
     div.append(objs)
 
     clickable.style = "height: 32px;position: absolute;width: 95%;cursor: pointer;";
-    txt.style="margin: 4px;border-bottom-style: solid;";
-    div.style="background-color: rgb(137, 105, 106);border-style: dotted;margin: 5px;";
+    txt.style = "margin: 4px;border-bottom-style: solid;";
+    div.style = "background-color: rgb(137, 105, 106);border-style: dotted;margin: 5px;";
 
     clickable.onclick = () => {
         document.querySelectorAll('.cat_objs').forEach(el => {
@@ -174,7 +174,7 @@ function createListEntry(array, name, renderDiv,objCallback) {
                 objCallback(el, i)
             }
             objs.append(obj)
-            obj.style="background-color: rgba(0, 0, 0, 0.15);margin: 6px;padding: 6px;cursor: pointer;";
+            obj.style = "background-color: rgba(0, 0, 0, 0.15);margin: 6px;padding: 6px;cursor: pointer;";
         })
     }
 
@@ -190,12 +190,12 @@ function createListEntry(array, name, renderDiv,objCallback) {
     return results;
 }
 
-function showObjPopup(name,props,buttons){
-    if(document.querySelector(".objPopup0_0"))
+function showObjPopup(name, props, buttons) {
+    if (document.querySelector(".objPopup0_0"))
         document.querySelector(".objPopup0_0").outerHTML = "";
-    if(!name)return;
-    document.body.style.overflowY='hidden';
-    if(!buttons)buttons=[];
+    if (!name) return;
+    document.body.style.overflowY = 'hidden';
+    if (!buttons) buttons = [];
     let wholePopup = document.createElement('div');
     let bg = document.createElement('div');
     let popup = document.createElement('div');
@@ -215,12 +215,12 @@ function showObjPopup(name,props,buttons){
     popup.appendChild(btnArea);
     popup.appendChild(closeBtn);
 
-    closeBtn.innerHTML="x";
-    closeBtn.style="position: relative;right: 0px;width: 20px;left: calc(100% - 20px);background-color: red;height: 20px;text-align: center;cursor: pointer;";
-    closeBtn.onclick=function(){
-        if(document.querySelector(".objPopup0_0"))
+    closeBtn.innerHTML = "x";
+    closeBtn.style = "position: relative;right: 0px;width: 20px;left: calc(100% - 20px);background-color: red;height: 20px;text-align: center;cursor: pointer;";
+    closeBtn.onclick = function () {
+        if (document.querySelector(".objPopup0_0"))
             document.querySelector(".objPopup0_0").outerHTML = "";
-        document.body.style.overflowY='';
+        document.body.style.overflowY = '';
     }
 
     let nameArea_header = document.createElement('div');
@@ -247,7 +247,7 @@ function showObjPopup(name,props,buttons){
 
     propArea_header.innerHTML = "Props";
 
-    Object.keys(props).forEach(key=>{
+    Object.keys(props).forEach(key => {
         let prop = document.createElement('div');
         let name = document.createElement('div');
         let value = document.createElement('div');
@@ -257,16 +257,16 @@ function showObjPopup(name,props,buttons){
 
         name.innerHTML = key;
         value.innerHTML = props[key];
-        value.style="display: inline;";
-        if(!isNaN(parseFloat(props[key]))){
+        value.style = "display: inline;";
+        if (!isNaN(parseFloat(props[key]))) {
             value.style.color = "#54acc3"
-        }else if(props[key]===true||props[key]===false) {
+        } else if (props[key] === true || props[key] === false) {
             value.style.color = "#bb5a31"
-        }else{
-            value.style.color="#499b54"
+        } else {
+            value.style.color = "#499b54"
         }
 
-        name.style="width: 25%;display: inline-block;color:gold;";
+        name.style = "width: 25%;display: inline-block;color:gold;";
 
 
         propArea_props.appendChild(prop);
@@ -274,7 +274,7 @@ function showObjPopup(name,props,buttons){
 
     btnArea.style = 'position: absolute;left: 20px;top: 80%;';
 
-    buttons.forEach(el=>{
+    buttons.forEach(el => {
         let prop = document.createElement('button');
 
         prop.innerHTML = el.name;
@@ -284,16 +284,16 @@ function showObjPopup(name,props,buttons){
     })
 
     wholePopup.className = "objPopup0_0";
-    if(document.querySelector(".objPopup0_0"))
-    document.querySelector(".objPopup0_0").outerHTML = "";
+    if (document.querySelector(".objPopup0_0"))
+        document.querySelector(".objPopup0_0").outerHTML = "";
     document.body.appendChild(wholePopup);
 }
 
-function showIFramePopup(src,buttons){
-    document.body.style.overflowY='hidden';
-    if(document.querySelector(".objPopup0_0"))
+function showIFramePopup(src, buttons) {
+    document.body.style.overflowY = 'hidden';
+    if (document.querySelector(".objPopup0_0"))
         document.querySelector(".objPopup0_0").outerHTML = "";
-    if(!buttons)buttons=[];
+    if (!buttons) buttons = [];
     let wholePopup = document.createElement('div');
     let bg = document.createElement('div');
     let popup = document.createElement('div');
@@ -301,8 +301,8 @@ function showIFramePopup(src,buttons){
     let btnArea = document.createElement('div');
     let frame = document.createElement('iframe');
     popup.appendChild(frame);
-    if(src){
-        frame.src=src;
+    if (src) {
+        frame.src = src;
     }
 
     bg.style = 'width: 100%; height: 100%;  top: 0px; left: 0px; background-color: rgba(0, 0, 0, 0.5);position: fixed;';
@@ -314,22 +314,22 @@ function showIFramePopup(src,buttons){
 
     popup.appendChild(closeBtn);
 
-    closeBtn.innerHTML="x";
-    closeBtn.style="position: relative;right: 0px;width: 20px;left: calc(100% - 20px);background-color: red;height: 20px;text-align: center;cursor: pointer;";
-    closeBtn.onclick=function(){
-        if(document.querySelector(".objPopup0_0"))
+    closeBtn.innerHTML = "x";
+    closeBtn.style = "position: relative;right: 0px;width: 20px;left: calc(100% - 20px);background-color: red;height: 20px;text-align: center;cursor: pointer;";
+    closeBtn.onclick = function () {
+        if (document.querySelector(".objPopup0_0"))
             document.querySelector(".objPopup0_0").outerHTML = "";
         document.body.style.overflowY = ''
     }
 
     wholePopup.className = "objPopup0_0";
-    if(document.querySelector(".objPopup0_0"))
+    if (document.querySelector(".objPopup0_0"))
         document.querySelector(".objPopup0_0").outerHTML = "";
     document.body.appendChild(wholePopup);
 
     btnArea.style = 'position: absolute;left: 20px;top: 80%;';
 
-    buttons.forEach(el=>{
+    buttons.forEach(el => {
         let prop = document.createElement('button');
 
         prop.innerHTML = el.name;
@@ -338,16 +338,16 @@ function showIFramePopup(src,buttons){
         btnArea.appendChild(prop);
     })
 
-    frame.style="position:absolute;width:100%;height:100%;"
-    
+    frame.style = "position:absolute;width:100%;height:100%;"
+
     return frame;
 }
 
-function showHTMLPopup(html,buttons){
-    document.body.style.overflowY='hidden';
-    if(document.querySelector(".objPopup0_0"))
+function showHTMLPopup(html, buttons) {
+    document.body.style.overflowY = 'hidden';
+    if (document.querySelector(".objPopup0_0"))
         document.querySelector(".objPopup0_0").outerHTML = "";
-    if(!buttons)buttons=[];
+    if (!buttons) buttons = [];
     let wholePopup = document.createElement('div');
     let bg = document.createElement('div');
     let popup = document.createElement('div');
@@ -355,8 +355,8 @@ function showHTMLPopup(html,buttons){
     let btnArea = document.createElement('div');
     let frame = document.createElement('div');
     popup.appendChild(frame);
-    if(html){
-        frame.innerHTML=html;
+    if (html) {
+        frame.innerHTML = html;
     }
 
     bg.style = 'width: 100%; height: 100%;  top: 0px; left: 0px; background-color: rgba(0, 0, 0, 0.5);position: fixed;';
@@ -368,22 +368,22 @@ function showHTMLPopup(html,buttons){
 
     popup.appendChild(closeBtn);
 
-    closeBtn.innerHTML="x";
-    closeBtn.style="position: relative;right: 0px;width: 20px;left: calc(100% - 20px);background-color: red;height: 20px;text-align: center;cursor: pointer;";
-    closeBtn.onclick=function(){
-        if(document.querySelector(".objPopup0_0"))
+    closeBtn.innerHTML = "x";
+    closeBtn.style = "position: relative;right: 0px;width: 20px;left: calc(100% - 20px);background-color: red;height: 20px;text-align: center;cursor: pointer;";
+    closeBtn.onclick = function () {
+        if (document.querySelector(".objPopup0_0"))
             document.querySelector(".objPopup0_0").outerHTML = "";
         document.body.style.overflowY = ''
     }
 
     wholePopup.className = "objPopup0_0";
-    if(document.querySelector(".objPopup0_0"))
+    if (document.querySelector(".objPopup0_0"))
         document.querySelector(".objPopup0_0").outerHTML = "";
     document.body.appendChild(wholePopup);
 
     btnArea.style = 'position: absolute;left: 20px;top: 80%;';
 
-    buttons.forEach(el=>{
+    buttons.forEach(el => {
         let prop = document.createElement('button');
 
         prop.innerHTML = el.name;
@@ -392,33 +392,58 @@ function showHTMLPopup(html,buttons){
         btnArea.appendChild(prop);
     })
 
-    frame.style="position:absolute;width:100%;height:100%;"
-    
+    frame.style = "position:absolute;width:100%;height:100%;"
+
     return frame;
 }
 
-function messageBoxYN(txt){
+function messageBoxYN(txt) {
     return confirm(txt);
 }
-function messageBoxInput(txt){
+
+function messageBoxInput(txt) {
     return prompt(txt);
 }
 
-function XHRGet(url){
+function XHRGet(url) {
     let xhr = new XMLHttpRequest();
     xhr.open('GET', `${url}${createURLWithHash()}`, false)
     xhr.send(null)
     return JSON.parse(xhr.responseText);
 }
 
-function checkPermission(perms,perm){
+async function XHRGetAsync(url, progressCB) {
+    return new Promise((r, j) => {
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', `${url}${createURLWithHash()}`, true)
+        xhr.send(null)
+
+        xhr.upload.onprogress = function (event) {
+            if (event.lengthComputable) {
+                let percentComplete = (event.loaded / event.total) * 100;
+                progressCB(percentComplete);
+            }
+        };
+
+        xhr.onreadystatechange = function (aEvt) {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200)
+                    r(xhr.responseText);
+                else
+                    j();
+            }
+        };
+    })
+}
+
+function checkPermission(perms, perm) {
     perms = perms.replaceAll("\n", ";")
     perms = perms.replaceAll(" ", "")
     perms = perms.replaceAll("\r", "")
     perms = perms.replaceAll("\t", "")
     let canAccess = false;
-    perms.split(';').forEach(el=>{
-        if(checkPerm(el,perm))canAccess = true;
+    perms.split(';').forEach(el => {
+        if (checkPerm(el, perm)) canAccess = true;
     })
     return canAccess;
 }
@@ -429,7 +454,7 @@ function checkPerm(uperm, perm) {
     let boolperms = true;
     let forceperms = false;
 
-    if(perma[0]=="default")return true;
+    if (perma[0] == "default") return true;
 
     perma.forEach((el, i) => {
         if (boolperms && uperma[i] == "*") {

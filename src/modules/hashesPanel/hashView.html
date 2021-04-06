@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Item</title>
-    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Quicksand"/>
-    <link rel="stylesheet" type="text/css" href="http://warfares.github.io/pretty-json/css/pretty-json.css"/>
+    <link href="http://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet" type="text/css"/>
+    <link href="http://warfares.github.io/pretty-json/css/pretty-json.css" rel="stylesheet" type="text/css"/>
     <script src="http://warfares.github.io/pretty-json/libs/jquery-1.11.1.min.js"></script>
     <script src="https://underscorejs.org/underscore-min.js"></script>
     <script src="https://backbonejs.org/backbone-min.js"></script>
@@ -37,10 +37,10 @@ HASH
 ADDITIONAL INFO
 <div class="res_a"></div>
 <div id="btns">
-<button onclick="location.reload()">REFRESH</button>
-<button onclick="changeHashType('refresh','0')">RENEW</button>
-<button onclick="changeHashType('invalid','0')">MAKE INVALID</button>
-<button onclick="changeHashType('admin','0')">TOGGLE ADMIN</button>
+    <button onclick="location.reload()">REFRESH</button>
+    <button onclick="changeHashType('refresh','0')">RENEW</button>
+    <button onclick="changeHashType('invalid','0')">MAKE INVALID</button>
+    <button onclick="changeHashType('admin','0')">TOGGLE ADMIN</button>
 </div>
 <script>
     hideLogoutBtn = true;
@@ -48,33 +48,33 @@ ADDITIONAL INFO
     document.getElementsByClassName('res_b')[0].innerHTML = hash.hash;
     res_a = document.getElementsByClassName('res_a')[0]
     res_a.innerHTML = "";
-    Object.keys(hash).forEach(key=>{
+    Object.keys(hash).forEach(key => {
         let obj = document.createElement('div')
         obj.innerHTML = `${key} : ${hash[key]}`
-        if(key.toLowerCase().includes('hash')){
+        if (key.toLowerCase().includes('hash')) {
             let content = `${hash[key]}`
             let href = `/ViewHashes/hash/${hash[key]}${createURLWithHash()}`
             obj.innerHTML = `${key} : <a href="${href}">${content}</a>`
         }
-        if(key==="lastUpdated"){
+        if (key === "lastUpdated") {
             let content = `${hash[key]}`
             obj.innerHTML = `${key} : ${content} --- <a class="string">${new Date().toString(content)}</a>`
         }
         res_a.append(obj)
     })
 
-    if(hash.type==="otp"){
+    if (hash.type === "otp") {
         let btn = document.createElement("button")
         btn.innerHTML = "TOGGLE USED"
-        btn.onclick = ()=>changeHashType('used','0')
+        btn.onclick = () => changeHashType('used', '0')
         $('#btns').append(btn)
     }
 
-    function changeHashType(action,value){
+    function changeHashType(action, value) {
         let req = new XMLHttpRequest()
-        req.open("POST",`/setHash${createURLWithHash()}`,false)
-        req.setRequestHeader("Content-Type","Application/json")
-        req.send(JSON.stringify({type:action,value:value,hash:hash}));
+        req.open("POST", `/setHash${createURLWithHash()}`, false)
+        req.setRequestHeader("Content-Type", "Application/json")
+        req.send(JSON.stringify({type: action, value: value, hash: hash}));
         location.reload()
     }
 </script>

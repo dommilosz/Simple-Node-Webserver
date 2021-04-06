@@ -1,8 +1,6 @@
-import {Endpoint, GetParams, server} from "../../webserver";
-import {} from "../../auth-handler";
+import {Endpoint, GetParams} from "../../webserver";
 import {sendFile, sendText} from "../../wsutils";
 import {readFileFromStorageJSON, writeFileToStorage} from "../../fileStorage";
-import {requireModule} from "../modulesHandler";
 
 
 let data = {}
@@ -42,14 +40,14 @@ Endpoint.get('/savedata/*', function (req, res) {
 })
 Endpoint.get('/data', function (req, res) {
     sendFile(req, res, 'src/modules/dataLogger/data.json', 200)
-},"data.view")
+}, "data.view")
 
 Endpoint.get('/ViewData', function (req, res) {
     sendFile(req, res, 'src/modules/dataLogger/dataView.html', 200)
-},"data.view")
+}, "data.view")
 Endpoint.get('/ViewData.js', function (req, res) {
     sendFile(req, res, 'src/modules/dataLogger/dataView.js', 200)
-},"data.view")
+}, "data.view")
 Endpoint.get('/ViewData/item/*', function (req, res) {
     data = (readFileFromStorageJSON("data.json"))
     let args = req.url.split('?')[0].split('/')
@@ -60,7 +58,7 @@ Endpoint.get('/ViewData/item/*', function (req, res) {
     let i = args[1]
 
     sendFile(req, res, 'src/modules/dataLogger/itemView.html', 200, {item: data[cat][i]})
-},"data.view")
+}, "data.view")
 Endpoint.get('/data/delItem/*', function (req, res) {
     data = (readFileFromStorageJSON("data.json"))
     let args = req.url.split('?')[0].split('/')
@@ -74,4 +72,4 @@ Endpoint.get('/data/delItem/*', function (req, res) {
     writeFileToStorage("data.json", JSON.stringify(data))
 
     sendText(res, "Deleted!", 200)
-},"data.delete")
+}, "data.delete")

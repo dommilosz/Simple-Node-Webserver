@@ -1,7 +1,7 @@
 <html>
 <head>
     <title>Login [USER]</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
     <script src="/login.js"></script>
     <style>
         body {
@@ -61,9 +61,9 @@
     </div>
     <div class="margin-5">
         <div style="width: 120px;display: inline-block">PASSWORD :</div>
-        <div style="display: inline"><input class="passwinp input" id="passwinp" type="password" name="password"></div>
+        <div style="display: inline"><input class="passwinp input" id="passwinp" name="password" type="password"></div>
     </div>
-    <button class="buttinp login_btn" id="buttinp" value="Log In" onclick="GetHash()">Log In</button>
+    <button class="buttinp login_btn" id="buttinp" onclick="GetHash()" value="Log In">Log In</button>
 
     </form>
 </div>

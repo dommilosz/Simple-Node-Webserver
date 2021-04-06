@@ -1,6 +1,6 @@
 //If enter is pressed start logging in procedure
-onkeypress = function(key){
-    if(key.key==="Enter"){
+onkeypress = function (key) {
+    if (key.key === "Enter") {
         GetHash()
     }
 }
@@ -21,8 +21,8 @@ function GetHash() {
         xhttp.setRequestHeader("Content-Type", "Application/json");
         xhttp.send(JSON.stringify(body));
         if (xhttp.status === 200) {
-            document.cookie = "hash="+JSON.parse(xhttp.responseText).hash;
-            document.cookie = "username="+btoa(document.getElementsByClassName("usrinp")[0].value);
+            document.cookie = "hash=" + JSON.parse(xhttp.responseText).hash;
+            document.cookie = "username=" + btoa(document.getElementsByClassName("usrinp")[0].value);
             window.location.reload()
         } else if (xhttp.status !== 200 && xhttp.readyState === 4) {
             showStatusModal(xhttp.responseText)
@@ -43,7 +43,7 @@ function OnLoad() {
         document.getElementsByClassName('perms')[0].style['color'] = 'red';
         document.title = "Login [ADMIN]"
 
-        if(checkLogin()){
+        if (checkLogin()) {
             document.querySelector("#current-perms").style.display = "";
         }
     }

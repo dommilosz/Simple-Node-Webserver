@@ -1,26 +1,19 @@
-import {Endpoint, server} from "../../webserver";
-import {
-    checkHashes,
-     getHash,
-    hashes_arr,
-
-    sendLoginPage, setProp
-} from "../../auth-handler";
+import {Endpoint} from "../../webserver";
+import {checkHashes, getHash, hashes_arr, setProp} from "../../auth-handler";
 import {sendFile, sendJSON, sendText} from "../../wsutils";
-import * as fs from "fs";
 import {config} from "../../configHandler";
 
 Endpoint.get('/hashes', function (req, res) {
-    sendJSON(res,hashes_arr,200)
-},"hashes.view")
+    sendJSON(res, hashes_arr, 200)
+}, "hashes.view")
 
 Endpoint.get('/ViewHashes', function (req, res) {
     checkHashes()
-    sendFile(req,res,'src/modules/hashesPanel/hashesView.html',200)
-},"hashes.view")
+    sendFile(req, res, 'src/modules/hashesPanel/hashesView.html', 200)
+}, "hashes.view")
 Endpoint.get('/ViewHashes.js', function (req, res) {
     sendFile(req, res, 'src/modules/hashesPanel/hashesView.js', 200)
-},"hashes.view")
+}, "hashes.view")
 
 Endpoint.get('/ViewHashes/hash/*', function (req, res) {
     let args = req.url.split('?')[0].split('/')
@@ -30,8 +23,8 @@ Endpoint.get('/ViewHashes/hash/*', function (req, res) {
     let hash = args[0]
     let hash_obj = hashes_arr[hash]
     checkHashes()
-    sendFile(req,res,'src/modules/hashesPanel/hashView.html',200,{obj:hash_obj})
-},"hashes.view")
+    sendFile(req, res, 'src/modules/hashesPanel/hashView.html', 200, {obj: hash_obj})
+}, "hashes.view")
 
 Endpoint.post('/setHash', function (req, res) {
     let body = req.body;
@@ -47,8 +40,8 @@ Endpoint.post('/setHash', function (req, res) {
         checkHashes()
     }
     if (body.type == "admin") {
-        if(getHash(hash.hash).used&&getHash(hash.hash).usedByHash){
-            setProp(getHash(hash.hash).usedByHash,'isAdmin',!hash.isAdmin)
+        if (getHash(hash.hash).used && getHash(hash.hash).usedByHash) {
+            setProp(getHash(hash.hash).usedByHash, 'isAdmin', !hash.isAdmin)
         }
         setProp(hash.hash, 'isAdmin', !hash.isAdmin)
         checkHashes()
@@ -61,5 +54,5 @@ Endpoint.post('/setHash', function (req, res) {
         checkHashes()
     }
 
-    sendText(res,"State Changed",200)
-},"hashes.set")
+    sendText(res, "State Changed", 200)
+}, "hashes.set")

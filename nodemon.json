@@ -1,11 +1,10 @@
 
 {
   "execMap": {
-    "js": "node",
     "ts": "ts-node"
   },
   "watch": [
     "src"
   ],
-  "ext": "js,ts"
+  "ext": "ts"
 }

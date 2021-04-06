@@ -227,7 +227,7 @@ function renderPermsBoxes(level, json, placeholder, orgperm) {
             input.checked = true;
         }
         input.onclick = function () {
-            for (let i = 0; i < level+1; i++) {
+            for (let i = 0; i < level + 1; i++) {
                 refreshBoxes(input);
             }
 

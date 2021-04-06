@@ -43,6 +43,7 @@ $(document).ready(function () {
 $("#reload").onclick = function () {
     getData()
 }
+
 function showObjects(key) {
     shown = key;
     document.querySelectorAll('.cat_objs').forEach(el => {
@@ -58,7 +59,7 @@ function showObjects(key) {
 
         let txt = JSON.stringify(el.body)
         let displayTxt = txt.substring(0, 200)
-        if(el.body.username){
+        if (el.body.username) {
             displayTxt = el.body.username
         }
         obj_p.innerHTML = `[${i}] : ${displayTxt}`
@@ -79,14 +80,15 @@ function showObjects(key) {
                 let req = new XMLHttpRequest()
                 req.open("GET", `/Data/delitem/${key}/${i}${createURLWithHash()}`)
                 req.send(null)
-                setTimeout(function(){
+                setTimeout(function () {
                     getData();
                     showObjects(shown)
-                },500)
+                }, 500)
             }
         }
     })
 }
+
 function showObjPopup(obj_json, cat_a, index) {
     function Do_delete() {
         if (confirm(`Do You Want to delete ${cat_a} [${index}] item?`)) {
@@ -94,7 +96,7 @@ function showObjPopup(obj_json, cat_a, index) {
             req.open("GET", `/Data/delitem/${cat_a}/${index}${createURLWithHash()}`)
             req.send(null)
             showObjPopup('')
-            setTimeout(getData,500)
+            setTimeout(getData, 500)
 
         }
     }

@@ -1,4 +1,5 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <title>Collected Data</title>
     <script src="http://warfares.github.io/pretty-json/libs/jquery-1.11.1.min.js"></script>
@@ -12,20 +13,24 @@
             width: calc(100% - 25px);
             height: calc(100% - 60px);
         }
+
         .cat {
             border-style: dotted;
             margin: 5px;
         }
+
         .cat_name {
             margin: 4px;
             border-bottom-style: solid;
         }
+
         .clickable {
             height: 32px;
             position: absolute;
             width: 100%;
             cursor: pointer;
         }
+
         .cat_obj {
             background-color: rgba(0, 0, 0, 0.15);
             margin: 6px;
@@ -33,6 +38,7 @@
             cursor: pointer;
             max-height: 40px;
         }
+
         .obj_popup {
             background-color: #626262;
             width: 80%;
@@ -42,11 +48,13 @@
             left: 10%;
             display: none;
         }
-        .popup_cat_name{
+
+        .popup_cat_name {
             text-align: center;
             font-size: 30px;
             font-weight: bolder;
         }
+
         .popup_close_btn {
             position: absolute;
             top: 0px;
@@ -58,6 +66,7 @@
             cursor: pointer;
             line-height: 30px;
         }
+
         .delete_btn {
             border-radius: 30%;
             border-color: red;
@@ -67,6 +76,7 @@
             background-color: red;
             top: 0px;
         }
+
         .delBtn {
             position: relative;
             top: -30px;
@@ -77,6 +87,7 @@
             width: 30px;
             height: 30px;
         }
+
         .el_det {
             width: 96%;
             height: 35px;
@@ -88,7 +99,8 @@
 <script>
 
 </script>
-<button id="reload" onclick="getData()">RELOAD</button><br>
+<button id="reload" onclick="getData()">RELOAD</button>
+<br>
 <button onclick="location.href=`/admin${createURLWithHash()}`">ADMIN</button>
 
 <span id="results"></span>

@@ -1,4 +1,4 @@
-import {allPermissions, allPermissionsTree, Endpoint, GetParams} from "./webserver";
+import {allPermissionsTree, Endpoint, GetParams} from "./webserver";
 import {Request, Response} from "express";
 import {config} from "./configHandler";
 import {atob, btoa, consoleLog, sendCompletion, sendFile, sendJSON, sendText} from "./wsutils";
@@ -10,55 +10,57 @@ export let password = config.password;
 export let admin_password = config.admin_password
 
 export let checkUsernameOverride;
-export function checkUsername (username){
-    if(checkUsernameOverride){
+
+export function checkUsername(username) {
+    if (checkUsernameOverride) {
         return checkUsernameOverride(username);
     }
     return true;
 }
 
-export function overrideCheckUsername(cb){
+export function overrideCheckUsername(cb) {
     checkUsernameOverride = cb;
 }
 
 export let checkUserPermsOverride;
-export function checkUserPerms (username,password){
-    if(checkUserPermsOverride){
-        return checkUserPermsOverride(username,password);
+
+export function checkUserPerms(username, password) {
+    if (checkUserPermsOverride) {
+        return checkUserPermsOverride(username, password);
     }
-    if(password==admin_password){
+    if (password == admin_password) {
         return "*.*";
     }
-    if(password==password){
+    if (password == password) {
         return "user.*";
     }
 }
 
-export function overrideCheckUserPerms(cb){
+export function overrideCheckUserPerms(cb) {
     checkUserPermsOverride = cb;
 }
 
-export function returnPassword(req,username, admin) {
-    if (returnPassCallback) return returnPassCallback(req,username, admin);
+export function returnPassword(req, username, admin) {
+    if (returnPassCallback) return returnPassCallback(req, username, admin);
 
     if (admin) return admin_password;
     return password;
 }
 
-export function getHashFromReq(req){
+export function getHashFromReq(req) {
     let params: any = GetParams(req)
     return params.hash;
 }
 
-export function checkPermission(req,perm){
-    if(perm.split('.')[0]=="default")return true;
+export function checkPermission(req, perm) {
+    if (perm.split('.')[0] == "default") return true;
     let hash = getHash(getHashFromReq(req));
-    if(!hash)return false;
+    if (!hash) return false;
     let canAccess = false;
     let params = GetParams(req);
-    let perms = checkUserPerms(atob(params.username),params.password);
-    perms.split(';').forEach(el=>{
-        if(checkPerm(el,perm))canAccess = true;
+    let perms = checkUserPerms(atob(params.username), params.password);
+    perms.split(';').forEach(el => {
+        if (checkPerm(el, perm)) canAccess = true;
     })
     return canAccess;
 }
@@ -69,7 +71,7 @@ export function checkPerm(uperm, perm) {
     let boolperms = true;
     let forceperms = false;
 
-    if(perma[0]=="default")return true;
+    if (perma[0] == "default") return true;
 
     perma.forEach((el, i) => {
         if (boolperms && uperma[i] == "*") {
@@ -86,13 +88,14 @@ export function checkPerm(uperm, perm) {
 
 Endpoint.get("/checkLogin", function (req: Request, res: Response) {
     let perms = "user.*";
-    try{
+    try {
         let params = GetParams(req);
-        perms = checkUserPerms(atob(params.username),params.password);
-    }catch {}
+        perms = checkUserPerms(atob(params.username), params.password);
+    } catch {
+    }
 
 
-    sendJSON(res, ({permissions:perms, login: checkLogin(req)}), 200)
+    sendJSON(res, ({permissions: perms, login: checkLogin(req)}), 200)
     return;
 });
 
@@ -128,34 +131,34 @@ export function LoginRaw(username, password, req, res) {
     let admin = req.url.includes('?admin=1');
     let loggedAsAdmin = false;
 
-    if (!password||password.length < 1) {
-        return[`INVALID PASSWORD`, true, 403]
+    if (!password || password.length < 1) {
+        return [`INVALID PASSWORD`, true, 403]
 
     }
     if (auth.checkTimeout(req)) {
-        return[`SLOW DOWN! - Wait ${auth.checkTimeout(req)}ms`, true, 403]
+        return [`SLOW DOWN! - Wait ${auth.checkTimeout(req)}ms`, true, 403]
     }
-    if (!username || username.length < 1 || (!username && username.trim() == "")||!checkUsername(username)) {
+    if (!username || username.length < 1 || (!username && username.trim() == "") || !checkUsername(username)) {
 
-        return[`INVALID USERNAME`, true, 403]
+        return [`INVALID USERNAME`, true, 403]
     }
-    let requiredPassword = returnPassword(req,username, false)
-    let requiredPasswordAdmin = returnPassword(req, username,true)
+    let requiredPassword = returnPassword(req, username, false)
+    let requiredPasswordAdmin = returnPassword(req, username, true)
     if ((requiredPasswordAdmin != password) && (requiredPassword != password)) {
         consoleLog(`[INVALID_PASS] - "${password}" - USER: "${username}"`)
         auth.setConnTimeout(req, config.auth.invalidTimeout)
-        return[`INVALID PASSWORD`, true, 403]
+        return [`INVALID PASSWORD`, true, 403]
     }
     let r = AddHash(username, password);
     res.cookie('hash', r, {maxAge: 360000});
-    return [r,false,200]
+    return [r, false, 200]
 }
 
 export function Login(username, password, req, res) {
-    let resp = LoginRaw(username,password,req,res);
-    if(resp[1]){
+    let resp = LoginRaw(username, password, req, res);
+    if (resp[1]) {
         sendCompletion(res, resp[0], true, resp[2])
-    }else{
+    } else {
         sendJSON(res, {text: "Success", error: false, hash: resp[0]}, resp[2])
     }
 }
@@ -232,7 +235,7 @@ export function setConnTimeout(req, number) {
 export function checkLogin(req) {
     let params: any = GetParams(req)
     params.username = atob(params.username)
-    return (params.hash && params.username && params.username.trim() !== "" && Check_UHash(params.hash, params.username)) || returnPassword(req,params.username, false) === "";
+    return (params.hash && params.username && params.username.trim() !== "" && Check_UHash(params.hash, params.username)) || returnPassword(req, params.username, false) === "";
 }
 
 export function getUsername(req) {
@@ -288,6 +291,6 @@ export function setProp(hash, prop, value) {
     hashes_arr[hash][prop] = value;
 }
 
-Endpoint.get("/permsRaw",(req,res)=>{
-    sendJSON(res,(allPermissionsTree),200)
-},"auth.perms.see")
+Endpoint.get("/permsRaw", (req, res) => {
+    sendJSON(res, (allPermissionsTree), 200)
+}, "auth.perms.see")

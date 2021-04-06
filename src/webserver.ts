@@ -1,14 +1,34 @@
 import {config} from "./configHandler";
 import {json, Request, Response} from "express";
-import {sendFile, sendText,atob,btoa} from "./wsutils";
+import {atob, sendFile, sendText} from "./wsutils";
 import cookieParser from 'cookie-parser';
+import {loadModules, loadModulesCustom} from "./modules/modulesHandler";
 
-export const server = require('express')();
+export let server = require('express')();
 export let port = config.ports.web;
 
-export function Create() {
+export let overrideCreateCB;
+
+export function overrideCreate(cb) {
+    overrideCreateCB = cb;
+}
+
+export async function Create() {
+    loadModulesCustom("before");
     console.log(`Starting server on port ${port}`)
-    server.listen(port);
+    if (overrideCreateCB) {
+        await overrideCreateCB();
+        loadModules();
+        return;
+    }
+    await (new Promise(function (r, j) {
+        server.listen(port, () => {
+            r();
+        });
+    }))
+    console.log("server starting on port : " + port)
+    loadModules();
+    return server;
 }
 
 Create();
@@ -16,7 +36,7 @@ Create();
 server.use(cookieParser());
 server.use(json({limit: '50mb'}));
 
-export let allPermissions:any[] = [];
+export let allPermissions: any[] = [];
 export let allPermissionsTree = {};
 export module Endpoint {
     export function createEndPoint(url, type: "get" | "post", cb, perms?) {
@@ -34,8 +54,8 @@ export module Endpoint {
             }
 
         });
-        if(perms != "default"&&!allPermissions.includes(perms))
-        allPermissions.push(perms);
+        if (perms != "default" && !allPermissions.includes(perms))
+            allPermissions.push(perms);
         allPermissionsTree = permsToTree(allPermissions);
     }
 
@@ -75,8 +95,10 @@ export function GetParams(req) {
     if (!params.username || params.username == "undefined") params.username = req.cookies.username;
 
     let authh = require("./auth-handler");
-    if(!params.password&&(!params.hash||!authh.getHash(params.hash))){params.password = req.cookies.password;authh.LoginRaw(atob(params.username),params.password,req,req.res)}
-
+    if (!params.password && (!params.hash || !authh.getHash(params.hash))) {
+        params.password = req.cookies.password;
+        authh.LoginRaw(atob(params.username), params.password, req, req.res)
+    }
 
 
     return params
@@ -93,29 +115,35 @@ function mergeDeep(target, ...sources) {
     if (isObject(target) && isObject(source)) {
         for (const key in source) {
             if (isObject(source[key])) {
-                if (!target[key]) Object.assign(target, { [key]: {} });
+                if (!target[key]) Object.assign(target, {[key]: {}});
                 mergeDeep(target[key], source[key]);
             } else {
-                Object.assign(target, { [key]: source[key] });
+                Object.assign(target, {[key]: source[key]});
             }
         }
     }
 
     return mergeDeep(target, ...sources);
 }
-function permsToTree(perms:any[]){
+
+function permsToTree(perms: any[]) {
     let permsObj = {};
-    perms.forEach(el=>{
-        permsObj = combineJSON(permsObj,permToTree(el))
+    perms.forEach(el => {
+        permsObj = combineJSON(permsObj, permToTree(el))
     })
     return permsObj;
 }
-function combineJSON(json1,json2){
-    return mergeDeep(json1,json2)
+
+function combineJSON(json1, json2) {
+    return mergeDeep(json1, json2)
 }
-function permToTree(perm){
+
+function permToTree(perm) {
     const array = perm.split('.');
     const object = {};
-    array.reduce(function(o, s) { return o[s] = {}; }, object);
+    array.reduce(function (o, s) {
+        return o[s] = {};
+    }, object);
     return object;
 }
+
