@@ -30,6 +30,10 @@ export function readFileFromStorage_Safe(name) {
     }
 }
 
+export function getFilePath(name) {
+    return folderPath + name;
+}
+
 export function writeFileToStorage(name, data) {
     if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath);
     fs.writeFileSync(folderPath + name, data, {encoding: "utf8"})

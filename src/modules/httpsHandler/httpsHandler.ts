@@ -1,10 +1,12 @@
-import {readFileFromStorage_Safe} from "../../fileStorage";
-import {overrideCreate, port, server} from "../../webserver";
+import {getFilePath, readFileFromStorage_Safe} from "../../fileStorage";
+import {listeningServer, overrideCreate, port, server} from "../../webserver";
 import https from "https";
 import * as net from "net";
 import * as http from "http";
 import * as express from "express";
 import session from "cookie-session";
+import {getConfig, registerConfigProp} from "../../configHandler";
+import * as fs from "fs";
 
 export let cert = readFileFromStorage_Safe("cert.pem");
 export let key = readFileFromStorage_Safe("key.pem");
@@ -13,16 +15,18 @@ if (cert == "" || key == "") {
     console.log("HTTPS module:")
     console.log("Place cert.pem, key.pem in /files directory")
 } else {
-    let options = {
-        key: key,
-        cert: cert
-    };
     overrideCreate(async function () {
-        return await createServer(options);
+        return await createServer();
     })
 }
 
-async function createServer(httpsOptions) {
+async function createServer() {
+    cert = readFileFromStorage_Safe("cert.pem");
+    key = readFileFromStorage_Safe("key.pem");
+    let httpsOptions = {
+        key: key,
+        cert: cert
+    };
     server.use(express.static('public'));
     server.use(function (req, res, next) {
         if (req.secure) {
@@ -41,13 +45,14 @@ async function createServer(httpsOptions) {
         })
     );
     let sv = httpx.createServer(httpsOptions, server);
+    let _listeningServer;
     await (new Promise(function (r, j) {
-        sv.listen(port, () => {
+        _listeningServer = sv.listen(port, () => {
             r();
         });
     }))
     console.log("https server starting on port : " + port)
-    return sv;
+    return _listeningServer;
 }
 
 module httpx {
@@ -88,8 +93,14 @@ module httpx {
 
         // @ts-ignore
         server.http = http.createServer(handler);
-        // @ts-ignore
-        server.https = https.createServer(opts, handler);
+
+        try{
+            // @ts-ignore
+            server.https = https.createServer(opts, handler);
+        }catch{
+            console.log("Error when creating https server!");
+        }
+
         return server;
     }
 }

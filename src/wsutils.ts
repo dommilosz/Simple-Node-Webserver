@@ -1,6 +1,8 @@
 import * as fs from "fs";
 import request from "sync-request";
-import mime = require('mime');
+import * as mime from 'mime';
+import crypto from "crypto";
+import {Request,Response} from "express";
 
 export function sendFile(req, res, path: string, status: number, args = {}) {
     let type = mime.getType(path);
@@ -10,6 +12,7 @@ export function sendFile(req, res, path: string, status: number, args = {}) {
         content = replaceAll(content, `"%key=%${key}%"`, `(JSON.parse(atob('${btoa(JSON.stringify(args[key]))}')))`)
     })
     res.setHeader("Content-Length", byteSize(content))
+    res.setHeader("Content-Checksum", sha256(content))
     res.setHeader("Content-Type", type)
     res.writeHead(status)
     res.write(content);
@@ -49,6 +52,7 @@ export function consoleLog(str: String) {
 
 export function sendText(res, text, code) {
     res.setHeader("Content-Length", byteSize(text))
+    res.setHeader("Content-Checksum", sha256(text))
     res.writeHead(code, {"Content-Type": "text/html; charset=utf-8"})
     res.write(text)
     res.end()
@@ -57,6 +61,7 @@ export function sendText(res, text, code) {
 export function sendJSON(res, json, code) {
     let txt = JSON.stringify(json)
     res.setHeader("Content-Length", byteSize(txt))
+    res.setHeader("Content-Checksum", sha256(txt))
     res.writeHead(code, {"Content-Type": "application/json"})
     res.write(txt)
     res.end()
@@ -70,6 +75,10 @@ export function XHR_GET(url) {
     return request("GET", url, {json: true}).body.toString();
 }
 
-function byteSize(s) {
+export function byteSize(s) {
     return encodeURI(s).split(/%..|./).length - 1;
+}
+
+export function sha256(pwd) {
+    return crypto.createHash('sha256').update(pwd).digest('hex');
 }

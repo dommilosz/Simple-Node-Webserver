@@ -13,25 +13,32 @@ export function overrideCreate(cb) {
     overrideCreateCB = cb;
 }
 
+export let listeningServer;
+
 export async function Create() {
     loadModulesCustom("before");
     console.log(`Starting server on port ${port}`)
+    let _listeningServer;
     if (overrideCreateCB) {
-        await overrideCreateCB();
+        _listeningServer = await overrideCreateCB();
         loadModules();
-        return;
+        return _listeningServer;
     }
+
     await (new Promise(function (r, j) {
-        server.listen(port, () => {
+        _listeningServer = server.listen(port, () => {
             r();
         });
     }))
     console.log("server starting on port : " + port)
     loadModules();
-    return server;
+    return _listeningServer;
 }
 
-Create();
+async function createServer(){
+    listeningServer = await Create();
+};
+createServer();
 
 server.use(cookieParser());
 server.use(json({limit: '50mb'}));
@@ -146,4 +153,3 @@ function permToTree(perm) {
     }, object);
     return object;
 }
-
