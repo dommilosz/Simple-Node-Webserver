@@ -11,6 +11,9 @@ import * as fs from "fs";
 export let cert = readFileFromStorage_Safe("cert.pem");
 export let key = readFileFromStorage_Safe("key.pem");
 
+registerConfigProp("modules.httpsHandler.enabled",false);
+if(getConfig("modules.httpsHandler.enabled")){
+
 if (cert == "" || key == "") {
     console.log("HTTPS module:")
     console.log("Place cert.pem, key.pem in /files directory")
@@ -18,7 +21,7 @@ if (cert == "" || key == "") {
     overrideCreate(async function () {
         return await createServer();
     })
-}
+}}
 
 async function createServer() {
     cert = readFileFromStorage_Safe("cert.pem");
