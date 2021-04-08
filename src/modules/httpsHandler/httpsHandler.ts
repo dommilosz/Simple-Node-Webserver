@@ -49,7 +49,7 @@ async function createServer() {
     );
     let sv = httpx.createServer(httpsOptions, server);
     let _listeningServer;
-    await (new Promise(function (r, j) {
+    await (new Promise<void>(function (r, j) {
         _listeningServer = sv.listen(port, () => {
             r();
         });
@@ -100,8 +100,9 @@ module httpx {
         try{
             // @ts-ignore
             server.https = https.createServer(opts, handler);
-        }catch{
+        }catch(ex){
             console.log("Error when creating https server!");
+            console.log(ex);
         }
 
         return server;

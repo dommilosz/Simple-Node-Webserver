@@ -25,7 +25,7 @@ export async function Create() {
         return _listeningServer;
     }
 
-    await (new Promise(function (r, j) {
+    await (new Promise<void>(function (r, j) {
         _listeningServer = server.listen(port, () => {
             r();
         });
