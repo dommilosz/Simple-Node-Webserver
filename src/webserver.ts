@@ -1,7 +1,7 @@
 import {config} from "./configHandler";
 import {json, Request, Response} from "express";
 import {atob, sendFile, sendText} from "./wsutils";
-import cookieParser from 'cookie-parser';
+const cookieParser = require('cookie-parser');
 import {loadModules, loadModulesCustom} from "./modules/modulesHandler";
 
 export let server = require('express')();

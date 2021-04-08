@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as mime from 'mime';
-import crypto from "crypto";
+import * as crypto from "crypto";
 
 export function sendFile(req, res, path: string, status: number, args = {}) {
     // @ts-ignore

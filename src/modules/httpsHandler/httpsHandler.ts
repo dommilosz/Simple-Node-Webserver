@@ -1,10 +1,10 @@
 import {getFilePath, readFileFromStorage_Safe} from "../../fileStorage";
 import {listeningServer, overrideCreate, port, server} from "../../webserver";
-import https from "https";
+import * as https from "https";
 import * as net from "net";
 import * as http from "http";
 import * as express from "express";
-import session from "cookie-session";
+const session = require("cookie-session");
 import {getConfig, registerConfigProp} from "../../configHandler";
 import * as fs from "fs";
 
