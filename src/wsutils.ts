@@ -1,10 +1,9 @@
 import * as fs from "fs";
-import request from "sync-request";
 import * as mime from 'mime';
 import crypto from "crypto";
-import {Request,Response} from "express";
 
 export function sendFile(req, res, path: string, status: number, args = {}) {
+    // @ts-ignore
     let type = mime.getType(path);
     let content = fs.readFileSync(path, {encoding: 'utf-8'});
 
@@ -71,8 +70,32 @@ export function sendCompletion(res, text, error, code) {
     sendJSON(res, {error: error, text: text}, code);
 }
 
-export function XHR_GET(url) {
-    return request("GET", url, {json: true}).body.toString();
+export async function XHR_GET(url) {
+    return await httpGet(url);
+}
+
+async function httpGet(url:string) {
+     let str = await (new Promise<string>((r, j) => {
+        let handler;
+        if(url.startsWith("https://")){
+            handler = require('https');
+        }else{
+            handler = require('http');
+        }
+
+        handler.get(url, (resp) => {
+            let data = '';
+            resp.on('data', (chunk) => {
+                data += chunk;
+            });
+            resp.on('end', () => {
+                r(data);
+            });
+        }).on("error", (err) => {
+            j(err.message);
+        });
+    }))
+    return str;
 }
 
 export function byteSize(s) {
