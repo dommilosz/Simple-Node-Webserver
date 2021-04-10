@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import {config} from "../configHandler";
+import {config, getConfig, registerConfigProp} from "../configHandler";
 
 export let loadedModules: any = {}
 
@@ -12,10 +12,15 @@ export function requireModule(name: string) {
     return
 }
 
+export let currentModule = "";
 export function loadModule(name: string, type: string) {
     if (!loadedModules) loadedModules = {}
     if (!loadedModules[name] || !loadedModules[name].loaded) {
         try {
+            registerConfigProp(`modules.${name}.enabled`,true);
+            if(!getConfig(`modules.${name}.enabled`)){
+                return;
+            }
 
             try {
                 let moduleConfig = require(`./${name}/module.ts`);
@@ -23,6 +28,7 @@ export function loadModule(name: string, type: string) {
             } catch {
                 if (type != "default") return;
             }
+            currentModule = name;
             let module = require(`./${name}/${name}.ts`);
             console.log(`Loading ${name} - SUCCESS`)
             loadedModules[name] = {name: name, loaded: true}

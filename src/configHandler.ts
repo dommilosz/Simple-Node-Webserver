@@ -75,7 +75,7 @@ export function getConfig(key) {
 }
 
 export function registerConfigProp(key, defVal) {
-    if (!getConfig(key)) {
+    if (typeof getConfig(key) == 'undefined') {
         setConfig(key, defVal)
     }
 }

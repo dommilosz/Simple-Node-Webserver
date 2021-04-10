@@ -7,8 +7,8 @@ import {
     overrideReturnPassword
 } from "../../auth-handler";
 import {atob, sendCompletion, sendFile, sendJSON, sendText} from "../../wsutils";
-import {config} from "../../configHandler";
-
+import {config, getConfig, registerConfigProp} from "../../configHandler";
+import {currentModule} from "../modulesHandler";
 
 let accounts = {}
 try {
@@ -40,10 +40,13 @@ overrideCheckUserPerms((username, password) => {
     return (accounts[username].permissions)
 })
 
-export let registerNeedAdmin = false;
+
+registerConfigProp(`modules.${currentModule}.registerNeedPermissions`,true);
+export let registerNeedPermissions = getConfig(`modules.${currentModule}.registerNeedPermissions`);
+
 Endpoint.get('/register', function (req, res) {
     sendFile(req, res, 'src/modules/accountAuth/register.html', 200)
-}, registerNeedAdmin ? "auth.register" : "default")
+}, registerNeedPermissions ? "auth.register" : "default")
 
 Endpoint.get('/permsGUI', function (req, res) {
     let params = GetParams(req);
@@ -57,7 +60,7 @@ Endpoint.get('/permsGUI', function (req, res) {
 
 Endpoint.get('/register.js', function (req, res) {
     sendFile(req, res, 'src/modules/accountAuth/register.js', 200)
-}, "auth.register")
+})
 
 Endpoint.get('/accounts', function (req, res) {
     sendFile(req, res, 'src/modules/accountAuth/accounts.html', 200)
@@ -77,7 +80,7 @@ Endpoint.post('/registerAcc', function (req, res) {
     }
     registerAcc(atob(body.username), atob(body.password), isAdmin)
     sendCompletion(res, "Successfully created account", false, 200);
-}, registerNeedAdmin ? "auth.register" : "default")
+}, registerNeedPermissions ? "auth.register" : "default")
 
 Endpoint.post('/deleteAcc', function (req, res) {
     let body = req.body;

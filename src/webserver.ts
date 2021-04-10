@@ -32,6 +32,7 @@ export async function Create() {
     }))
     console.log("server starting on port : " + port)
     loadModules();
+    loadModulesCustom("after");
     return _listeningServer;
 }
 
