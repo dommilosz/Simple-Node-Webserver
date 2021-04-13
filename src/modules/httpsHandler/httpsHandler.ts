@@ -7,6 +7,7 @@ import * as express from "express";
 const session = require("cookie-session");
 import {getConfig, registerConfigProp} from "../../configHandler";
 import * as fs from "fs";
+import {currentModule} from "../modulesHandler";
 
 export let cert = readFileFromStorage_Safe("cert.pem");
 export let key = readFileFromStorage_Safe("key.pem");
@@ -20,6 +21,8 @@ if (cert == "" || key == "") {
     })
 }
 
+registerConfigProp(`modules.${currentModule}.hsts`,true);
+
 async function createServer() {
     cert = readFileFromStorage_Safe("cert.pem");
     key = readFileFromStorage_Safe("key.pem");
@@ -27,6 +30,17 @@ async function createServer() {
         key: key,
         cert: cert
     };
+    if(getConfig(`modules.${currentModule}.hsts`)===true){
+        server.use(function (req,res,next){
+            let maxAge = "63072000";
+            let compiled = 'max-age=' + maxAge;
+            compiled += '; includeSubDomains';
+            res.setHeader('Strict-Transport-Security', compiled);
+            next();
+        })
+        console.log("Using HSTS!")
+    }
+
     server.use(express.static('public'));
     server.use(function (req, res, next) {
         if (req.secure) {

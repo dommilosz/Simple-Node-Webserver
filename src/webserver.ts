@@ -14,6 +14,7 @@ export function overrideCreate(cb) {
 }
 
 export let listeningServer;
+server.disable('x-powered-by')
 
 export async function Create() {
     loadModulesCustom("before");
