@@ -80,6 +80,9 @@ export module Endpoint {
 Endpoint.get("/jsu.js", function (req: Request, res: Response) {
     sendFile(req, res, "src/jsutils.js", 200);
 });
+Endpoint.get("/forage.js", function (req: Request, res: Response) {
+    sendFile(req, res, "src/localForage.js", 200);
+});
 
 
 export function GetParams(req) {

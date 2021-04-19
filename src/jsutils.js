@@ -1,3 +1,30 @@
+async function getLocalForage(){
+    if(localforage)return localforage;
+    let script = document.createElement("script");
+    script.src = "/forage.js";
+
+    document.head.appendChild(script);
+    try{
+        await localforage.setDriver([
+            localforage.INDEXEDDB,
+            localforage.WEBSQL,
+            localforage.LOCALSTORAGE
+        ])
+    }catch{
+
+    }
+    return localforage;
+}
+
+async function setForageItem(key,data){
+    await getLocalForage();
+    await localforage.setItem(key,data);
+}
+async function getForageItem(key){
+    await getLocalForage();
+    return await localforage.getItem(key);
+}
+
 function checkAdminPerms() {
     let req = new XMLHttpRequest()
     req.open("GET", `/checkLogin${createURLWithHash()}`, false)
@@ -13,6 +40,15 @@ function checkLogin() {
     let resp = JSON.parse(req.responseText);
     return resp.login;
 }
+
+function getCurrentUserPermissions() {
+    let req = new XMLHttpRequest()
+    req.open("GET", `/checkLogin${createURLWithHash()}`, false)
+    req.send(null);
+    let resp = JSON.parse(req.responseText);
+    return resp.permissions;
+}
+
 
 function GetParams() {
     let url = location.href
@@ -42,8 +78,10 @@ function createURLWithHash() {
 }
 
 window.addEventListener('load', createLogoutButton, false);
-hideLogoutBtn = false;
-
+let hideLogoutBtn = false;
+function disableLogoutBtn(){
+    hideLogoutBtn = true;
+}
 function createLogoutButton() {
     if (!checkLogin() || hideLogoutBtn) {
         return;
@@ -418,8 +456,13 @@ async function XHRGetAsync(url, progressCB) {
         xhr.open('GET', `${url}${createURLWithHash()}`, true)
         xhr.send(null)
 
-        xhr.onprogress = function (event) {
-            progressCB(event);
+        xhr.onprogress = function (evt) {
+            if(progressCB)
+            {
+                if (evt.lengthComputable) {
+                    progressCB(evt.loaded, evt.total)
+                }
+            }
         };
 
         xhr.onreadystatechange = function (aEvt) {
@@ -431,6 +474,66 @@ async function XHRGetAsync(url, progressCB) {
             }
         };
     })
+}
+
+async function XHRGetAsyncHead(url) {
+    return new Promise((r, j) => {
+        let xhr = new XMLHttpRequest();
+        xhr.open('HEAD', `${url}${createURLWithHash()}`, true)
+        xhr.send(null)
+
+        xhr.onreadystatechange = function (aEvt) {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    let headers = {};
+                    xhr.getAllResponseHeaders().split('\r\n').forEach(el => {
+                        if (el)
+                            headers[el.split(':')[0]] = (el.split(':')[1]).trim()
+                    })
+                    r(headers);
+                }
+                else
+                    j();
+            }
+        };
+    })
+}
+
+let requestCached = false;
+async function XHRGetCachedAsync(url,progressCB,storeKey){
+    progressCB(0,1);
+    requestCached = false;
+    let total = 0;
+    let headers = await XHRGetAsyncHead(url);
+    if (headers['content-checksum']) {
+        let sha = headers['content-checksum'];
+        if(headers['content-length'])
+        {
+            total = headers['content-length'];
+        }
+        try {
+            let cache = JSON.parse(await getForageItem(storeKey));
+
+            if (cache.sha === sha) {
+                downloading = false;
+                progressCB(total,total)
+                requestCached = true;
+                return cache.data;
+            }
+        } catch {
+
+        }
+    }
+    let data = (await XHRGetAsync(url, progressCB))
+    try {
+        let json = {};
+        json["sha"] = await sha256(data);
+        json["data"] = (data);
+        await setForageItem(storeKey,JSON.stringify(json));
+    } catch {
+    }
+    progressCB(total,total);
+    return (data);
 }
 
 function checkPermission(perms, perm) {
