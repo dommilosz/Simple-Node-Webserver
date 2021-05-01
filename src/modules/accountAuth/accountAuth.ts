@@ -1,6 +1,7 @@
 import {readFileFromStorageJSON, writeFileToStorage} from "../../fileStorage";
 import {Endpoint, GetParams} from "../../webserver";
 import {
+    admin_password,
     checkPermission,
     overrideCheckUsername,
     overrideCheckUserPerms,
@@ -41,7 +42,7 @@ overrideCheckUserPerms((username, password) => {
 })
 
 
-registerConfigProp(`modules.${currentModule}.registerNeedPermissions`,true);
+registerConfigProp(`modules.${currentModule}.registerNeedPermissions`, true);
 export let registerNeedPermissions = getConfig(`modules.${currentModule}.registerNeedPermissions`);
 
 Endpoint.get('/register', function (req, res) {
@@ -57,6 +58,16 @@ Endpoint.get('/permsGUI', function (req, res) {
     }
 
 }, "auth.perms.edit")
+
+Endpoint.get('/customPropsGUI', function (req, res) {
+    let params = GetParams(req);
+    if (params.user) {
+        sendFile(req, res, 'src/modules/accountAuth/customProps.html', 200, {user: atob(params.user)})
+    } else {
+        sendText(res, "Invalid username", 400)
+    }
+
+}, "auth.customProps.edit")
 
 Endpoint.get('/register.js', function (req, res) {
     sendFile(req, res, 'src/modules/accountAuth/register.js', 200)
@@ -106,7 +117,7 @@ Endpoint.post('/changeAcc', function (req, res) {
         sendCompletion(res, "Account does not exist!", true, 200);
         return;
     }
-    changeProps(body.username, body.password, body.admin, body.newUsername)
+    changeProps(body.username, body.password, body.admin, body.newUsername, body.custom)
     sendCompletion(res, "Successfully changed account", false, 200);
 }, "auth.accounts.change")
 
@@ -138,6 +149,7 @@ Endpoint.post('/changePerms', function (req, res) {
 
 export function registerAcc(name, pass, isAdmin) {
     accounts[name] = ({username: name, password: pass, permissions: isAdmin ? "*.*" : "user.*"})
+    checkAccounts();
     writeFileToStorage("accounts.json", JSON.stringify(accounts));
 }
 
@@ -146,10 +158,15 @@ export function removeAcc(name) {
     writeFileToStorage("accounts.json", JSON.stringify(accounts));
 }
 
-export function changeProps(name, pass, isAdmin, newName) {
+export function renameAcc(name,newName){
+    if(name==newName)return;
+    accounts[newName] = accounts[name];
+    delete accounts[name];
+}
+
+export function changeProps(name, pass, isAdmin, newName, custom?: { name: string, value: boolean | string | number }) {
     if (newName) {
-        registerAcc(newName, accounts[name].password, accounts[name].admin);
-        removeAcc(name);
+        renameAcc(name,newName);
         return;
     }
     if (accounts[name].admin)
@@ -161,7 +178,18 @@ export function changeProps(name, pass, isAdmin, newName) {
     if (pass) {
         accounts[name].password = pass;
     }
+    if (custom) {
+        accounts[name].customProps = custom;
+        checkAccounts();
+    }
     writeFileToStorage("accounts.json", JSON.stringify(accounts));
+}
+
+export let customProps = {};
+
+export function registerCustomAccountProp(name, defVal: string | boolean | number) {
+    customProps[name] = {type: typeof defVal, value: defVal,name:name};
+    checkAccounts();
 }
 
 export function editPerms(name, perms) {
@@ -170,9 +198,34 @@ export function editPerms(name, perms) {
 }
 
 Endpoint.get('/accountsRaw', function (req, res) {
+    checkAccounts();
     sendJSON(res, (accounts), 200)
 }, "auth.accounts")
 
 export function getAccount(username) {
+    if(username==="root"){
+        return {
+            "username": "root",
+            "password": admin_password,
+            "admin": true,
+            "permissions": "*.*",
+            "customProps": {
+                "parent": "root"
+            }
+        }
+    }
     return accounts[username];
+}
+
+export function checkAccounts(){
+    Object.keys(accounts).forEach(key => {
+        let el = accounts[key];
+        if (!el.customProps) el.customProps = {};
+        Object.keys(customProps).forEach(key2 => {
+            let el2 = customProps[key2];
+            if(!el.customProps[el2.name]){
+                el.customProps[el2.name] = el2.value;
+            }
+        })
+    })
 }

@@ -68,7 +68,11 @@ function showObjPopupAcc(el, raw_json, passShow) {
                 }])
                 document.querySelector('#permissions').value =raw_json[el].permissions?raw_json[el].permissions:"user.*";
                 */
-                showIFramePopup(`/permsGUI?user=${btoa(el)}`)
+                showIFramePopup(`/permsGUI?user=${btoa(el)}`,undefined,_=>{showObjPopupAcc(el, raw_json, passShow)})
+            }
+        }, {
+            name: `Change customProps`, onclick: function () {
+                showIFramePopup(`/customPropsGUI?user=${btoa(el)}`,undefined,_=>{showObjPopupAcc(el, raw_json, passShow)})
             }
         }
 
@@ -99,12 +103,13 @@ function removeAccount(name) {
     showStatusModal(xhr.responseText)
 }
 
-function changeAccount(name, pass, isAdmin, newName) {
+function changeAccount(name, pass, isAdmin, newName, custom) {
     let body = {
         username: name,
         password: pass,
         admin: isAdmin,
         newUsername: newName,
+        custom: custom,
     }
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "/changeAcc", false);
@@ -249,4 +254,67 @@ function renderPermsBoxes(level, json, placeholder, orgperm) {
             renderPermsBoxes(level + 1, json[key], placeholder, orgperm2)
         }
     })
+}
+
+function renderCustomValuesFields() {
+    document.querySelector('.curr_acc').innerHTML = user;
+    let accounts = XHRGet('/accountsRaw');
+    perms = accounts[user].customProps;
+    let placeholder = document.querySelector('#custom_area');
+    placeholder.innerHTML = "";
+
+    Object.keys(accounts[user].customProps).forEach(key => {
+        let el = accounts[user].customProps[key];
+        let name = document.createElement('div');
+        let delBtn = document.createElement('button');
+        name.innerHTML = key+"&nbsp;&nbsp;";
+        name.style = "display:inline;";
+        let box;
+        if (typeof el === typeof "") {
+            box = document.createElement('input');
+            box.type = "text";
+            box.value = el;
+        }
+        if (typeof el === typeof 1) {
+            box = document.createElement('input');
+            box.type = "number";
+            box.value = el;
+        }
+        if (typeof el === typeof true) {
+            box = document.createElement('input');
+            box.type = "checkbox";
+            box.checked = el;
+        }
+
+        box.setAttribute("customProp", key);
+        box.setAttribute("cType", typeof el);
+        box.className = "customPropEditBox";
+
+        let ph2 = document.createElement('div');
+        document.querySelector("#custom_area").appendChild(ph2);
+        ph2.appendChild(name);
+        ph2.appendChild(box);
+        ph2.appendChild(delBtn);
+
+        delBtn.onclick=function (){
+            ph2.outerHTML = "";
+        }
+        delBtn.innerHTML = "Delete";
+    })
+}
+
+function saveCustom(){
+    changeAccount(user, undefined, undefined,undefined,getCustomFromHTML());
+
+    function getCustomFromHTML(){
+        let custom = {};
+        document.querySelectorAll(".customPropEditBox").forEach(el=>{
+            let value = el.value;
+            if(el.getAttribute("cType")=== typeof true){
+                value = el.checked;
+            }
+            custom[el.getAttribute("customProp")] = value;
+        })
+        return custom;
+    }
 }

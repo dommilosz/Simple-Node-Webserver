@@ -1,15 +1,23 @@
-import {allPermissionsTree, Endpoint, GetParams} from "./webserver";
+import {allPermissionsTree, Endpoint, expandPermissions, GetParams} from "./webserver";
 import {Request, Response} from "express";
-import {config} from "./configHandler";
+import {getConfig, registerConfigProp} from "./configHandler";
 import {atob, btoa, consoleLog, sendCompletion, sendFile, sendJSON, sendText} from "./wsutils";
 
 const auth = require("./auth-handler");
 export let hashes_arr = {}
-
-export let password = config.password;
-export let admin_password = config.admin_password
-
 export let checkUsernameOverride;
+
+registerConfigProp("auth.admin_password","admin123");
+registerConfigProp("auth.password","user");
+registerConfigProp("auth.token_lifetime",864000);
+registerConfigProp("auth.invalidTimeout",3000);
+registerConfigProp("auth.allowLoginPageMixins",true);
+
+export let password = getConfig("auth.password");
+export let admin_password = getConfig("auth.admin_password");
+export let token_lifetime = getConfig("auth.token_lifetime");
+export let invalidTimeout = getConfig("auth.invalidTimeout");
+export let allowLoginPageMixins = getConfig("auth.allowLoginPageMixins");
 
 export function checkUsername(username) {
     if (checkUsernameOverride) {
@@ -34,6 +42,7 @@ export function checkUserPerms(username, password) {
     if (password == password) {
         return "user.*";
     }
+    return "user.*";
 }
 
 export function overrideCheckUserPerms(cb) {
@@ -62,6 +71,8 @@ export function checkPermission(req, perm) {
     perms.split(';').forEach(el => {
         if (checkPerm(el, perm)) canAccess = true;
     })
+    if(expandPermissions(atob(params.username),perm))canAccess=true;
+
     return canAccess;
 }
 
@@ -88,27 +99,29 @@ export function checkPerm(uperm, perm) {
 
 Endpoint.get("/checkLogin", function (req: Request, res: Response) {
     let perms = "user.*";
+    let username = "";
     try {
         let params = GetParams(req);
         perms = checkUserPerms(atob(params.username), params.password);
+        username = atob(params.username);
     } catch {
     }
 
 
-    sendJSON(res, ({permissions: perms, login: checkLogin(req)}), 200)
+    sendJSON(res, ({permissions: perms, login: checkLogin(req),username:(username)}), 200)
     return;
 });
 
 Endpoint.get("/logout", function (req: Request, res: Response) {
     if (checkLogin(req)) {
-        res.cookie('hash', '', {maxAge: 360000});
-        res.cookie('username', '', {maxAge: 360000});
+        res.cookie('hash', '', {maxAge: token_lifetime});
+        res.cookie('username', '', {maxAge: token_lifetime});
         sendText(res, "Logged out", 200)
 
         let params: any = GetParams(req)
         let hash = params.hash;
         setProp(hash, "expired", true)
-        setProp(hash, "lastUpdated", Math.round(+new Date() / 1000) - (config.auth.token_lifetime + 60))
+        setProp(hash, "lastUpdated", Math.round(+new Date() / 1000) - (token_lifetime + 60))
         checkHashes()
 
         return;
@@ -120,47 +133,44 @@ Endpoint.post("/auth", function (req: Request, res: Response) {
     if (params.username && params.username.trim() != "") {
         params.username = atob(params.username)
         params.password = atob(params.password)
-        Login(params.username, params.password, req, res)
+        Login(params.username, params.password, req, res, true)
         return;
     }
     sendCompletion(res, `INVALID PASSWORD`, true, 403)
-    auth.setConnTimeout(req, config.auth.invalidTimeout)
+    auth.setConnTimeout(req, invalidTimeout)
 });
 
-export function LoginRaw(username, password, req, res) {
-    let admin = req.url.includes('?admin=1');
-    let loggedAsAdmin = false;
+export function Login(username, password, req, res, sendResponse: boolean) {
+    try {
+        let resp = Authenticate(username, password, req);
+        res.cookie('username', username, {maxAge: token_lifetime});
+        res.cookie('password', password, {maxAge: token_lifetime});
+        if (sendResponse)
+            sendCompletion(res, {hash: resp}, false, 200);
+    } catch (ex) {
+        if (sendResponse)
+            sendCompletion(res, ex, true, 403);
+    }
+}
 
+export function Authenticate(username, password, req) {
     if (!password || password.length < 1) {
-        return [`INVALID PASSWORD`, true, 403]
-
+        throw `INVALID PASSWORD`
     }
     if (auth.checkTimeout(req)) {
-        return [`SLOW DOWN! - Wait ${auth.checkTimeout(req)}ms`, true, 403]
+        throw `SLOW DOWN! - Wait ${auth.checkTimeout(req)}ms`
     }
     if (!username || username.length < 1 || (!username && username.trim() == "") || !checkUsername(username)) {
-
-        return [`INVALID USERNAME`, true, 403]
+        throw "INVALID USERNAME"
     }
     let requiredPassword = returnPassword(req, username, false)
     let requiredPasswordAdmin = returnPassword(req, username, true)
     if ((requiredPasswordAdmin != password) && (requiredPassword != password)) {
         consoleLog(`[INVALID_PASS] - "${password}" - USER: "${username}"`)
-        auth.setConnTimeout(req, config.auth.invalidTimeout)
-        return [`INVALID PASSWORD`, true, 403]
+        auth.setConnTimeout(req, invalidTimeout)
+        throw "INVALID PASSWORD"
     }
-    let r = AddHash(username, password);
-    res.cookie('hash', r, {maxAge: 360000});
-    return [r, false, 200]
-}
-
-export function Login(username, password, req, res) {
-    let resp = LoginRaw(username, password, req, res);
-    if (resp[1]) {
-        sendCompletion(res, resp[0], true, resp[2])
-    } else {
-        sendJSON(res, {text: "Success", error: false, hash: resp[0]}, resp[2])
-    }
+    return AddHash(username, password);
 }
 
 export function AddHash(username, password) {
@@ -197,7 +207,7 @@ function CheckHash(hash, username) {
             return false;
         }
         let updated = ts - hashes_arr[hash].lastUpdated;
-        if (updated < config.auth.token_lifetime) {
+        if (updated < auth.token_lifetime) {
             consoleLog(`[HASH - VALID    ] - [${hashes_arr[hash].isAdmin ? "ADMIN" : "USER "}] - "${hash}" USER: "${username}"`)
 
             return true;
@@ -259,6 +269,7 @@ export function checkTimeout(req) {
 export let loginPageLoc = './src/login.html';
 
 export function mixinSetLoginPage(page: string) {
+    if(!allowLoginPageMixins)return;
     if (!page) {
         loginPageLoc = './src/login.html';
     } else {
@@ -266,8 +277,8 @@ export function mixinSetLoginPage(page: string) {
     }
 }
 
-export function sendLoginPage(req, res) {
-    sendFile(req, res, loginPageLoc, 200, {admin: false})
+export function sendLoginPage(req, res,requiredPermissions:string) {
+    sendFile(req, res, loginPageLoc, 200, {reqPermissions: requiredPermissions})
 }
 
 export function checkHashes() {
@@ -275,7 +286,7 @@ export function checkHashes() {
         hashes_arr[hash]['fromLastUpdate'] = Math.round((+new Date() / 1000) - hashes_arr[hash].lastUpdated)
         let ts = Math.round(new Date().getTime() / 1000);
         let updated = ts - hashes_arr[hash].lastUpdated;
-        if (updated < config.auth.token_lifetime) {
+        if (updated < token_lifetime) {
 
         } else {
             hashes_arr[hash].expired = true;

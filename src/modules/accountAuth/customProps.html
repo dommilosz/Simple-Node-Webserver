@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Custom Properties</title>
+    <script src="/jsu.js"></script>
+    <script src="/register.js" defer></script>
+    <script>
+        let user = "%key=%user%"
+        disableLogoutBtn();
+    </script>
+</head>
+<body onload="renderCustomValuesFields()">
+<div>Account:
+    <div class="curr_acc" style="display:inline;"></div>
+</div>
+<div id="custom_area"></div>
+<button onclick="saveCustom()">SAVE</button>
+<div id="perms"></div>
+</body>
+</html>

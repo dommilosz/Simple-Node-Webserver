@@ -1,8 +1,9 @@
 import * as fs from "fs";
 import * as mime from 'mime';
 import * as crypto from "crypto";
+import {PathLike} from "fs";
 
-export function sendFile(req, res, path: string, status: number, args = {}) {
+export function sendFile(req, res, path: PathLike, status: number, args = {}) {
     // @ts-ignore
     let type = mime.getType(path);
     let content = fs.readFileSync(path, {encoding: 'utf-8'});
@@ -104,4 +105,8 @@ export function byteSize(s) {
 
 export function sha256(pwd) {
     return crypto.createHash('sha256').update(pwd).digest('hex');
+}
+
+export function sendMissingPermissionPage(perms,res){
+    sendText(res, `<script src="jsu.js"></script><h1>403 - Forbidden</h1>You don't have access to this resource. <a href="#" onclick="logout()">Logout</a><br>Permission: <code>${perms}</code>`, 403)
 }

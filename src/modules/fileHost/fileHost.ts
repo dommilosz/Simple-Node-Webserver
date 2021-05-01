@@ -1,6 +1,6 @@
 import {Endpoint} from "../../webserver";
 import {checkLogin, checkPermission, sendLoginPage} from "../../auth-handler";
-import {sendText} from "../../wsutils";
+import {sendMissingPermissionPage, sendText} from "../../wsutils";
 import {readFileFromStorageJSON_Safe} from "../../fileStorage";
 
 let files = readFileFromStorageJSON_Safe("files.json");
@@ -27,18 +27,14 @@ Endpoint.get('/view/*', function (req: any, res: any) {
         if (!file || !file.html) {
             sendText(res, "<h1>Error 404 - Not Found</h1><br/><span>Weird place, Void. If you think that something except of this text should be here contact the administrator</span>", 404)
         } else {
-            if (!checkLogin(req)) {
-                sendLoginPage(req, res);
-                return;
-            }
             if (checkPermission(req, file.perm)) {
                 sendText(res, file.html, 200);
             } else {
-                sendText(res, `<h1>403 - Forbidden</h1>You don't have access to this resource<br>Permission: <code>${file.perm}</code>`, 403)
+                sendMissingPermissionPage(file.perm,res);
             }
 
         }
 
     }
 
-})
+},"user.filehost.view")

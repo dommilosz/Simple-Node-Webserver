@@ -1,8 +1,10 @@
 import {config} from "./configHandler";
 import {json, Request, Response} from "express";
-import {atob, sendFile, sendText} from "./wsutils";
-const cookieParser = require('cookie-parser');
+import {atob, sendCompletion, sendFile, sendMissingPermissionPage, sendText} from "./wsutils";
 import {loadModules, loadModulesCustom} from "./modules/modulesHandler";
+import {PathLike} from "fs";
+
+const cookieParser = require('cookie-parser');
 
 export let server = require('express')();
 export let port = config.ports.web;
@@ -37,9 +39,25 @@ export async function Create() {
     return _listeningServer;
 }
 
-async function createServer(){
+async function createServer() {
+    await stopServer();
     listeningServer = await Create();
+}
+
+async function stopServer() {
+    if (!listeningServer) return;
+    try {
+        console.log("Stopping server");
+        listeningServer.close();
+    } catch {
+
+    }
+}
+
+async function restartServer() {
+    await createServer();
 };
+
 createServer();
 
 server.use(cookieParser());
@@ -56,16 +74,14 @@ export module Endpoint {
                 cb(req, res);
             } else {
                 if (!authHandler.checkLogin(req)) {
-                    authHandler.sendLoginPage(req, res);
+                    authHandler.sendLoginPage(req, res, perms);
                     return;
                 }
-                sendText(res, `<script src="jsu.js"></script><h1>403 - Forbidden</h1>You don't have access to this resource<br>Permission: <code>${perms}</code>`, 403)
+                sendMissingPermissionPage(perms,res);
             }
 
         });
-        if (perms != "default" && !allPermissions.includes(perms))
-            allPermissions.push(perms);
-        allPermissionsTree = permsToTree(allPermissions);
+        registerPermission(perms);
     }
 
     export function get(url, cb, perms?) {
@@ -75,6 +91,12 @@ export module Endpoint {
     export function post(url, cb, perms?) {
         createEndPoint(url, "post", cb, perms);
     }
+
+    export function file(file: PathLike, perms?, code?, args?) {
+        get(file, function (req, res) {
+            sendFile(req, res, file, code | 200, args);
+        }, perms)
+    }
 }
 
 Endpoint.get("/jsu.js", function (req: Request, res: Response) {
@@ -83,7 +105,43 @@ Endpoint.get("/jsu.js", function (req: Request, res: Response) {
 Endpoint.get("/forage.js", function (req: Request, res: Response) {
     sendFile(req, res, "src/localForage.js", 200);
 });
+Endpoint.post("/serverAction", function (req: Request, res: Response) {
+    let body = req.body;
+    if(!body)sendCompletion(res,"Body not found",true,400);
+    if(!body.actionType)sendCompletion(res,"Action not found",true,400);
+    let actionType = body.actionType;
 
+    switch(actionType){
+        case "restart":{restartServer(); break;}
+        case "stop":{stopServer(); break;}
+    }
+
+},"admin.manage");
+
+
+export function registerPermission(perms) {
+    if (perms != "default" && !allPermissions.includes(perms))
+        allPermissions.push(perms);
+    allPermissionsTree = permsToTree(allPermissions);
+}
+
+export function removePermissions(perms: string) {
+    allPermissions.forEach((el: string, i) => {
+        if (el.startsWith(perms))
+            allPermissions.splice(i, 1);
+    })
+    allPermissionsTree = permsToTree(allPermissions);
+}
+
+export let expandPermissionsCallback;
+
+export function OverrideExpandPermissions(cb: (username, perm) => void) {
+    expandPermissionsCallback = cb;
+}
+
+export function expandPermissions(username, perm): boolean {
+    return expandPermissionsCallback(username, perm);
+}
 
 export function GetParams(req) {
     let url = req.originalUrl
@@ -109,7 +167,7 @@ export function GetParams(req) {
     let authh = require("./auth-handler");
     if (!params.password && (!params.hash || !authh.getHash(params.hash))) {
         params.password = req.cookies.password;
-        authh.LoginRaw(atob(params.username), params.password, req, req.res)
+        authh.Login(atob(params.username), params.password, req, req.res, false)
     }
 
 

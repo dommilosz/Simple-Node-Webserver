@@ -13,15 +13,12 @@ function GetHash() {
             username: btoa(document.getElementsByClassName("usrinp")[0].value),
             password: btoa(document.getElementsByClassName("passwinp")[0].value),
         }
-        if (adminLogin === true) {
-            body['admin'] = '1'
-        }
         const xhttp = new XMLHttpRequest();
         xhttp.open("POST", theUrl, false);
         xhttp.setRequestHeader("Content-Type", "Application/json");
         xhttp.send(JSON.stringify(body));
         if (xhttp.status === 200) {
-            document.cookie = "hash=" + JSON.parse(xhttp.responseText).hash;
+            document.cookie = "hash=" + JSON.parse(xhttp.responseText).text.hash;
             document.cookie = "username=" + btoa(document.getElementsByClassName("usrinp")[0].value);
             window.location.reload()
         } else if (xhttp.status !== 200 && xhttp.readyState === 4) {
@@ -29,7 +26,7 @@ function GetHash() {
         }
 
     } catch (ex) {
-        showModal(`Exception : ${ex.message}`)
+        showErrModal(`Exception : ${ex.message}`)
     }
 }
 
@@ -38,12 +35,10 @@ function GetHash() {
 function OnLoad() {
     if (document.URL.includes("?hash="))
         window.location.href = window.location.href.split('?')[0]
-    if (adminLogin) {
-        document.getElementsByClassName('perms')[0].innerHTML = "[ADMIN]"
-        document.getElementsByClassName('perms')[0].style['color'] = 'red';
-        document.title = "Login [ADMIN]"
+    if (reqPermissions) {
+        document.getElementsByClassName('perms')[0].innerHTML = reqPermissions
 
-        if (checkLogin()) {
+        if (isLoggedIn()) {
             document.querySelector("#current-perms").style.display = "";
         }
     }
