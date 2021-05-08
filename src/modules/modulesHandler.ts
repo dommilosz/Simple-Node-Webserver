@@ -31,9 +31,10 @@ export function loadModule(name: string, type: string) {
                 if (type != "default") return;
             }
             currentModule = name;
-            let module = require(`./${name}/${name}.ts`);
+            let path = `./${name}/${name}.ts`;
+            let module = require(path);
             console.log(`Loading ${name} - SUCCESS`)
-            loadedModules[name] = {name: name, loaded: true}
+            loadedModules[name] = {name: name, loaded: true,path}
             return module;
         } catch (ex) {
             console.log(`Loading ${name} - FAIL`)
@@ -47,6 +48,25 @@ export function loadModule(name: string, type: string) {
 
 export function loadModules() {
     loadModulesCustom("default")
+}
+export function unloadModules() {
+    console.log("Unloading modules")
+    loadedModules.forEach(el=>{
+        if(el.path)
+        unloadModule(el.path);
+    })
+    loadedModules.clear();
+}
+export function unloadModule(module) {
+    let solvedName = require.resolve(module),
+        nodeModule = require.cache[solvedName];
+    if (nodeModule) {
+        for (let i = 0; i < nodeModule.children.length; i++) {
+            let child = nodeModule.children[i];
+            unloadModule(child.filename);
+        }
+        delete require.cache[solvedName];
+    }
 }
 
 export function loadModulesCustom(type) {

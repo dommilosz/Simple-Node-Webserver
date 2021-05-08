@@ -1,36 +1,10 @@
 async function getLocalForage() {
-    return new Promise(async (resolve, reject) => {
-        if (!document.querySelector(".forageScript")) {
-            let script = document.createElement("script");
-            script.className = "forageScript"
-            script.src = "/forage.js";
-            document.head.appendChild(script);
-        }
-
-        while (true) {
-            await delay(200);
-            if (await checkForForage()) {
-                break;
-            }
-        }
-
-        async function checkForForage() {
-            try {
-                if (localforage) {
-                    await localforage.setDriver([
-                        localforage.INDEXEDDB,
-                        localforage.WEBSQL,
-                        localforage.LOCALSTORAGE
-                    ])
-                    if (localforage) resolve(localforage);
-                    return (localforage);
-                }
-            } catch {
-
-            }
-            return undefined;
-        }
-    });
+    await import("/forage.js");
+    await localforage.setDriver([
+        localforage.INDEXEDDB,
+        localforage.WEBSQL,
+        localforage.LOCALSTORAGE
+    ])
 }
 
 async function delay(ms) {
@@ -129,15 +103,24 @@ async function bodyOnLoad() {
 
 async function renderTheme() {
     document.querySelectorAll(".theme-css").forEach(el => el.outerHTML = "");
-    if (!allowThemes) return;
     let themeStyle = document.createElement("style");
     themeStyle.className = "theme-css"
     document.head.appendChild(themeStyle);
-    if (allowThemes) {
-        theme = await getForageItem("theme");
-    } else {
-        theme = "white";
+
+    if (!allowThemes) {
+        themeStyle.innerHTML = returnThemeCSS("no-theme");
+        return;
     }
+    theme = await getForageItem("theme");
+    if (!theme) {
+        await changeTheme("white");
+        return await renderTheme();
+    }
+    themeStyle.innerHTML = returnThemeCSS(theme);
+
+}
+
+function returnThemeCSS(theme) {
     let themeVars = {
         primaryBg: "",
         secondaryBg: "",
@@ -145,13 +128,8 @@ async function renderTheme() {
         primaryFg: "",
         secondaryFg: "",
     }
-    if (!theme) {
-        await changeTheme("white");
-        return await renderTheme();
-    }
 
     if (theme === "dark") {
-
         themeVars.primaryBg = "#242424";
         themeVars.secondaryBg = "#161616";
         themeVars.embedBg = "#161616";
@@ -159,12 +137,18 @@ async function renderTheme() {
         themeWhite = false;
     }
     if (theme === "white") {
-        themeStyle.innerHTML = "";
         themeVars.primaryBg = "#ffffff";
         themeVars.embedBg = "#ffffff";
         themeVars.secondaryBg = "#aeaeae";
         themeVars.primaryFg = "#000000";
         themeWhite = true;
+    }
+    if (theme === "no-theme") {
+        themeVars.primaryBg = "#242424";
+        themeVars.secondaryBg = "#161616";
+        themeVars.embedBg = "#161616";
+        themeVars.primaryFg = "#d5d5d5";
+        themeWhite = false;
     }
 
     let compiledVars = "";
@@ -172,8 +156,12 @@ async function renderTheme() {
         let el = themeVars[key];
         compiledVars += `--${key}: ${el};\n`;
     })
-
-    themeStyle.innerHTML = `
+    if (theme === "no-theme") {
+        return `body{
+            ${compiledVars};
+        `
+    }
+    return `
         body{
             background-color:var(--primaryBg);
             color:var(--primaryFg);
