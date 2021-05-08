@@ -15,7 +15,9 @@
     <div class="curr_acc" style="display:inline;"></div>
 </div>
 <div id="custom_area"></div>
-<button onclick="saveCustom()">SAVE</button>
+<br>
+<input type="text" placeholder="name" class="new-cName"><select onchange="changeNewCtype()" class="new-cType"><option value="text">Text</option><option value="number">Number</option><option value="checkbox">Boolean</option></select><input class="new-cValue" type="text" placeholder="value">
+<button onclick="addCustom()">ADD</button><br><button onclick="saveCustom()">SAVE</button>
 <div id="perms"></div>
 </body>
 </html>

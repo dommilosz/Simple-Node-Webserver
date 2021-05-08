@@ -1,10 +1,16 @@
 <html>
 <head>
-    <title>2Bored2Wait</title>
+    <title>Index</title>
     <link href="index.css" rel="stylesheet"/>
+    <script src="/jsu.js"></script>
 </head>
-<body onload="" style="color: white;">
-GZ
+<body onload="">
+
+<span>Hello <span id="username"></span></span>
+<script>
+    let user = getCurrentUserName();
+    document.getElementById("username").innerText = user;
+</script>
 <br><br>
 
 </body>

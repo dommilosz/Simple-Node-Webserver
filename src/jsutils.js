@@ -1,19 +1,42 @@
 async function getLocalForage() {
-    if (localforage) return localforage;
-    let script = document.createElement("script");
-    script.src = "/forage.js";
+    return new Promise(async (resolve, reject) => {
+        if (!document.querySelector(".forageScript")) {
+            let script = document.createElement("script");
+            script.className = "forageScript"
+            script.src = "/forage.js";
+            document.head.appendChild(script);
+        }
 
-    document.head.appendChild(script);
-    try {
-        await localforage.setDriver([
-            localforage.INDEXEDDB,
-            localforage.WEBSQL,
-            localforage.LOCALSTORAGE
-        ])
-    } catch {
+        while (true) {
+            await delay(200);
+            if (await checkForForage()) {
+                break;
+            }
+        }
 
-    }
-    return localforage;
+        async function checkForForage() {
+            try {
+                if (localforage) {
+                    await localforage.setDriver([
+                        localforage.INDEXEDDB,
+                        localforage.WEBSQL,
+                        localforage.LOCALSTORAGE
+                    ])
+                    if (localforage) resolve(localforage);
+                    return (localforage);
+                }
+            } catch {
+
+            }
+            return undefined;
+        }
+    });
+}
+
+async function delay(ms) {
+    return new Promise((resolve, reject) => {
+        setTimeout(resolve, ms);
+    })
 }
 
 async function setForageItem(key, data) {
@@ -84,12 +107,93 @@ function createURLWithHash() {
     return `?hash=${GetParams().hash}?username=${GetParams().username}`;
 }
 
-window.addEventListener('load', createLogoutButton, false);
+window.addEventListener('load', bodyOnLoad, false);
 let hideLogoutBtn = false;
+let allowThemes = true;
+let theme = "white";
+let themeWhite = true;
 
 function disableLogoutBtn() {
     hideLogoutBtn = true;
 }
+
+function disableThemes() {
+    allowThemes = false;
+}
+
+
+async function bodyOnLoad() {
+    createLogoutButton();
+    await renderTheme();
+}
+
+async function renderTheme() {
+    document.querySelectorAll(".theme-css").forEach(el=>el.outerHTML="");
+    if(!allowThemes)return;
+    let themeStyle = document.createElement("style");
+    themeStyle.className = "theme-css"
+    document.head.appendChild(themeStyle);
+    if (allowThemes) {
+        theme = await getForageItem("theme");
+    } else {
+        theme = "white";
+    }
+    let themeVars = {
+        primaryBg: "",
+        secondaryBg: "",
+        embedBg: "",
+        primaryFg: "",
+        secondaryFg: "",
+    }
+    if (!theme) {
+        await changeTheme("white");
+        return await renderTheme();
+    }
+
+    if (theme === "dark") {
+
+        themeVars.primaryBg = "#242424";
+        themeVars.secondaryBg = "#161616";
+        themeVars.embedBg = "#161616";
+        themeVars.primaryFg = "#d5d5d5";
+        themeWhite = false;
+    }
+    if (theme === "white") {
+        themeStyle.innerHTML = "";
+        themeVars.primaryBg = "#ffffff";
+        themeVars.embedBg = "#ffffff";
+        themeVars.secondaryBg = "#aeaeae";
+        themeVars.primaryFg = "#000000";
+        themeWhite = true;
+    }
+
+    let compiledVars = "";
+    Object.keys(themeVars).forEach(key=>{
+        let el = themeVars[key];
+        compiledVars += `--${key}: ${el};\n`;
+    })
+
+    themeStyle.innerHTML = `
+        body{
+            background-color:var(--primaryBg);
+            color:var(--primaryFg);
+        }
+        
+        select, input{
+            background-color:var(--embedBg);
+            color:var(--primaryFg);
+        }
+        
+        body{
+            ${compiledVars};
+        `
+}
+
+async function changeTheme(theme) {
+    await setForageItem("theme", theme);
+    await renderTheme();
+}
+
 
 function createLogoutButton() {
     if (!isLoggedIn() || hideLogoutBtn) {
@@ -107,7 +211,7 @@ function createLogoutButton() {
     btn.style.top = '5px'
     btn.style.right = '5px'
     btn.style.cursor = 'pointer'
-    btn.style['background-color'] = 'gray'
+    btn.style['background-color'] = 'var(--secondaryBg)'
     btn.style['text-align'] = 'center';
     btn.className = "acc-btn";
     btn.onclick = () => {
@@ -128,11 +232,11 @@ function showAccountBar() {
     let bar = document.createElement('div');
     document.body.appendChild(bar)
     bar.style.width = '160px'
-    bar.style.height = '95px'
+    bar.style.height = '125px'
     bar.style.position = 'absolute'
     bar.style.top = '35px'
     bar.style.right = '5px'
-    bar.style['background-color'] = 'gray'
+    bar.style['background-color'] = 'var(--secondaryBg)'
     bar.className = "acc-bar"
     document.querySelector(".acc-btn").style.width = "160px"
 
@@ -159,6 +263,25 @@ function showAccountBar() {
         btn_manage.style.backgroundColor = "#002cff";
     }
     bar.appendChild(btn_manage)
+
+    let btn_theme = document.createElement('div');
+    btn_theme.innerHTML = "Theme: "+theme;
+    btn_theme.style["text-align"] = 'center';
+    btn_theme.style.backgroundColor = "#404040";
+    btn_theme.style.height = "25px";
+    btn_theme.style.cursor = 'pointer'
+    btn_theme.style.margin = "5px";
+    btn_theme.onmouseover = function () {
+        btn_theme.style.backgroundColor = "#343434";
+    }
+    btn_theme.onmouseleave = function () {
+        btn_theme.style.backgroundColor = "#404040";
+    }
+    btn_theme.onclick= async function () {
+        await changeTheme(theme==="white"?"dark":"white");
+        btn_theme.innerHTML = "Theme: "+theme;
+    }
+    bar.appendChild(btn_theme)
 
     let btn_logout = document.createElement('div');
     btn_logout.innerHTML = "Logout";
@@ -206,8 +329,11 @@ function showModalRaw(text, error) {
     document.body.appendChild(modal);
 
     modal.style = "font-family: sans-serif;position: fixed;z-index: 1;padding-top: 100px;left: 0;top: 0;width: 100%;height: 100%;overflow: auto;background-color: rgb(0, 0, 0);background-color: rgba(0, 0, 0, 0.4)";
-    content.style = `color: white;background-color: rgb(32, 32, 32);margin: auto;padding: 20px;border: 1px solid ${error ? "red" : "lime"};width: 40%`;
+    content.style = `margin: auto;padding: 20px;border: 1px solid ${error ? "red" : "lime"};width: 40%`;
     closeBtn.style = "color: #aaaaaa;float: right;font-size: 28px;font-weight: bold;";
+
+    content.style.color = "var(--primaryFg)";
+    content.style["background-color"] = "var(--secondaryBg)";
 
     closeBtn.onclick = function () {
         document.body.removeChild(modal);
@@ -293,9 +419,9 @@ function createListEntry(array, name, renderDiv, objCallback) {
     renderDiv.append(results);
 
     document.querySelectorAll('.cat').forEach(el => {
-        let r = Math.round(Math.random() * 155) + 100
-        let g = Math.round(Math.random() * 155) + 100
-        let b = Math.round(Math.random() * 155) + 100
+        let r = Math.round(Math.random() * (155+(themeWhite ? -100 : +100))) + (themeWhite ? 100 : -100)
+        let g = Math.round(Math.random() * (155+(themeWhite ? -100 : +100))) + (themeWhite ? 100 : -100)
+        let b = Math.round(Math.random() * (155+(themeWhite ? -100 : +100))) + (themeWhite ? 100 : -100)
         el.style['background-color'] = `rgb(${r},${g},${b})`
     })
     return results;
@@ -317,7 +443,12 @@ function showObjPopup(name, props, buttons, closecb) {
     let closeBtn = document.createElement('div');
 
     bg.style = 'width: 100%; height: 100%;  top: 0px; left: 0px; background-color: rgba(0, 0, 0, 0.5);position: fixed;';
-    popup.style = 'width: 50%;height: 50%;position: fixed;top: 25%;left: 25%;background-color: rgb(45, 45, 45);';
+    popup.style = 'width: 50%;height: 50%;position: fixed;top: 25%;left: 25%;';
+
+    popup.style.backgroundColor = "var(--primaryBg)";
+    popup.style["border-color"] = "var(--primaryFg)";
+    popup.style["border-style"] = "groove";
+    popup.style["border-width"] = "2px";
 
     wholePopup.appendChild(bg);
     wholePopup.appendChild(popup);
@@ -419,7 +550,12 @@ function showIFramePopup(src, buttons, closecb) {
     }
 
     bg.style = 'width: 100%; height: 100%;  top: 0px; left: 0px; background-color: rgba(0, 0, 0, 0.5);position: fixed;';
-    popup.style = 'width: 50%;height: 50%;position: fixed;top: 25%;left: 25%;background-color: rgb(45, 45, 45);';
+    popup.style = 'width: 50%;height: 50%;position: fixed;top: 25%;left: 25%;';
+
+    popup.style.backgroundColor = "var(--primaryBg)";
+    popup.style["border-color"] = "var(--primaryFg)";
+    popup.style["border-style"] = "groove";
+    popup.style["border-width"] = "2px";
 
     wholePopup.appendChild(bg);
     wholePopup.appendChild(popup);
@@ -474,7 +610,12 @@ function showHTMLPopup(html, buttons, closecb) {
     }
 
     bg.style = 'width: 100%; height: 100%;  top: 0px; left: 0px; background-color: rgba(0, 0, 0, 0.5);position: fixed;';
-    popup.style = 'width: 50%;height: 50%;position: fixed;top: 25%;left: 25%;background-color: rgb(45, 45, 45);';
+    popup.style = 'width: 50%;height: 50%;position: fixed;top: 25%;left: 25%;';
+
+    popup.style.backgroundColor = "var(--primaryBg)";
+    popup.style["border-color"] = "var(--primaryFg)";
+    popup.style["border-style"] = "groove";
+    popup.style["border-width"] = "2px";
 
     wholePopup.appendChild(bg);
     wholePopup.appendChild(popup);

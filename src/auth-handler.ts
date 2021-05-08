@@ -5,7 +5,7 @@ import {atob, btoa, consoleLog, sendCompletion, sendFile, sendJSON, sendText} fr
 
 const auth = require("./auth-handler");
 export let hashes_arr = {}
-export let checkUsernameOverride;
+export let checkUsernameOverride: (cb: any) => any;
 
 registerConfigProp("auth.admin_password","admin123");
 registerConfigProp("auth.password","user");
@@ -19,7 +19,7 @@ export let token_lifetime = getConfig("auth.token_lifetime");
 export let invalidTimeout = getConfig("auth.invalidTimeout");
 export let allowLoginPageMixins = getConfig("auth.allowLoginPageMixins");
 
-export function checkUsername(username) {
+export function checkUsername(username: string) {
     if (checkUsernameOverride) {
         return checkUsernameOverride(username);
     }
@@ -114,8 +114,9 @@ Endpoint.get("/checkLogin", function (req: Request, res: Response) {
 
 Endpoint.get("/logout", function (req: Request, res: Response) {
     if (checkLogin(req)) {
-        res.cookie('hash', '', {maxAge: token_lifetime});
         res.cookie('username', '', {maxAge: token_lifetime});
+        res.cookie('password', '', {maxAge: token_lifetime});
+        res.cookie('hash', '', {maxAge: token_lifetime});
         sendText(res, "Logged out", 200)
 
         let params: any = GetParams(req)
@@ -143,14 +144,17 @@ Endpoint.post("/auth", function (req: Request, res: Response) {
 export function Login(username, password, req, res, sendResponse: boolean) {
     try {
         let resp = Authenticate(username, password, req);
-        res.cookie('username', username, {maxAge: token_lifetime});
-        res.cookie('password', password, {maxAge: token_lifetime});
+        res.cookie('username', btoa(username), {maxAge: token_lifetime});
+        //res.cookie('password', password, {maxAge: token_lifetime});
+        res.cookie('hash', resp, {maxAge: token_lifetime});
         if (sendResponse)
             sendCompletion(res, {hash: resp}, false, 200);
+        return resp;
     } catch (ex) {
         if (sendResponse)
             sendCompletion(res, ex, true, 403);
     }
+    return undefined;
 }
 
 export function Authenticate(username, password, req) {

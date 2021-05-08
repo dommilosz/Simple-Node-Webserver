@@ -31,6 +31,7 @@ function showObjPopupAcc(el, raw_json, passShow) {
                 if (messageBoxYN(`Do you want to make account "${el}" ${raw_json[el].admin ? "USER" : "ADMIN"}`)) {
                     changeAccount(el, undefined, !raw_json[el].admin);
                     getAccounts();
+                    showObjPopupAcc(el, accounts_perms, passShow)
                 }
             }
         },
@@ -40,6 +41,7 @@ function showObjPopupAcc(el, raw_json, passShow) {
                 if (inp) {
                     changeAccount(el, undefined, undefined, inp);
                     getAccounts();
+                    showObjPopupAcc(el, accounts_perms, passShow)
                 }
 
             }
@@ -49,6 +51,7 @@ function showObjPopupAcc(el, raw_json, passShow) {
                 if (inp) {
                     changeAccount(el, inp, undefined, undefined);
                     getAccounts();
+                    showObjPopupAcc(el, accounts_perms, passShow)
                 }
 
             }
@@ -68,23 +71,30 @@ function showObjPopupAcc(el, raw_json, passShow) {
                 }])
                 document.querySelector('#permissions').value =raw_json[el].permissions?raw_json[el].permissions:"user.*";
                 */
-                showIFramePopup(`/permsGUI?user=${btoa(el)}`,undefined,_=>{showObjPopupAcc(el, raw_json, passShow)})
+                showIFramePopup(`/permsGUI?user=${btoa(el)}`, undefined, _ => {
+                    getAccounts();
+                    showObjPopupAcc(el, accounts_perms, passShow)
+                })
             }
         }, {
             name: `Change customProps`, onclick: function () {
-                showIFramePopup(`/customPropsGUI?user=${btoa(el)}`,undefined,_=>{showObjPopupAcc(el, raw_json, passShow)})
+                showIFramePopup(`/customPropsGUI?user=${btoa(el)}`, undefined, _ => {
+                    getAccounts();
+                    showObjPopupAcc(el, accounts_perms, passShow)
+                })
             }
         }
 
     ])
 }
 
-
+let accounts_perms = {};
 function getAccounts() {
     let xhr = new XMLHttpRequest();
     xhr.open('GET', `/accountsRaw${createURLWithHash()}`, false)
     xhr.send(null)
-    raw_json = JSON.parse(xhr.responseText)
+    let raw_json = JSON.parse(xhr.responseText)
+    accounts_perms = raw_json;
     showObjPopup();
     createListEntry(Object.keys(raw_json), "accounts", document.querySelector("#accounts-user"), function (el, i) {
         showObjPopupAcc(el, raw_json, false)
@@ -121,6 +131,7 @@ function changeAccount(name, pass, isAdmin, newName, custom) {
 
 function changeAccountPerms(name, perms) {
     perms = perms.replaceAll("\n", ";")
+    perms = perms.replaceAll(";;", ";")
     perms = perms.replaceAll(" ", "")
     perms = perms.replaceAll("\r", "")
     perms = perms.replaceAll("\t", "")
@@ -137,30 +148,37 @@ function changeAccountPerms(name, perms) {
 }
 
 let perms = ""
-
+let allPermissions;
 function renderPermsCheckbox() {
     document.querySelector('.curr_acc').innerHTML = user;
-    let json = XHRGet("/permsRaw")
-    let accounts = XHRGet('/accountsRaw');
-    perms = accounts[user].permissions;
+    allPermissions= JSON.parse(XHRGet("/permsRaw"))
+    let accounts = JSON.parse(XHRGet('/accountsRaw'));
+    perms = accounts[user].permissions.replaceAll(";","\n");
     document.querySelector('#perms_area').value = perms;
-    let placeholder = document.getElementById('perms');
-    placeholder.innerHTML = "";
     document.querySelector('#perms_area').onchange = function () {
-        perms = document.querySelector('#perms_area').value;
-        let boxes = document.querySelectorAll('input');
-        boxes.forEach(el => {
-            el.checked = checkPermission(perms, el.value)
-        })
+        redrawBoxes();
     }
-
-    renderPermsBoxes(0, {"": json}, placeholder, "");
-
-
+    redrawBoxes();
 }
 
 function savePerms() {
     changeAccountPerms(user, perms);
+}
+
+let allowedPerms = {};
+function generateAllowedPerms(perms,parent){
+    Object.keys(perms).forEach(key=>{
+        let el = perms[key];
+        allowedPerms[parent]
+    })
+}
+
+function redrawBoxes(){
+
+
+    let placeholder = document.getElementById('perms');
+    placeholder.innerHTML = "";
+    renderPermsBoxes(0, {"": allPermissions}, placeholder, "");
 }
 
 function refreshBoxes(input) {
@@ -228,14 +246,11 @@ function renderPermsBoxes(level, json, placeholder, orgperm) {
         let input = document.createElement('input');
         input.type = 'checkbox';
         input.value = orgperm2;
-        if (checkPermission(perms, key)) {
-            input.checked = true;
-        }
+        input.id = "permission-box-"+key;
         input.onclick = function () {
             for (let i = 0; i < level + 1; i++) {
                 refreshBoxes(input);
             }
-
         }
         name.innerHTML = key;
         if (level === 0) {
@@ -254,67 +269,112 @@ function renderPermsBoxes(level, json, placeholder, orgperm) {
             renderPermsBoxes(level + 1, json[key], placeholder, orgperm2)
         }
     })
+    Object.keys(json).forEach(key => {
+        let orgperm2 = ((orgperm !== "" ? (orgperm + ".") : "") + key)
+        let input = document.querySelector("#permission-box-"+key);
+        if (checkPermission(perms, orgperm2)) {
+            input.checked = true;
+        }
+    })
 }
 
 function renderCustomValuesFields() {
     document.querySelector('.curr_acc').innerHTML = user;
-    let accounts = XHRGet('/accountsRaw');
+    let accounts = JSON.parse(XHRGet('/accountsRaw'));
     perms = accounts[user].customProps;
     let placeholder = document.querySelector('#custom_area');
     placeholder.innerHTML = "";
 
     Object.keys(accounts[user].customProps).forEach(key => {
         let el = accounts[user].customProps[key];
-        let name = document.createElement('div');
-        let delBtn = document.createElement('button');
-        name.innerHTML = key+"&nbsp;&nbsp;";
-        name.style = "display:inline;";
-        let box;
-        if (typeof el === typeof "") {
-            box = document.createElement('input');
-            box.type = "text";
-            box.value = el;
-        }
-        if (typeof el === typeof 1) {
-            box = document.createElement('input');
-            box.type = "number";
-            box.value = el;
-        }
-        if (typeof el === typeof true) {
-            box = document.createElement('input');
-            box.type = "checkbox";
-            box.checked = el;
-        }
-
-        box.setAttribute("customProp", key);
-        box.setAttribute("cType", typeof el);
-        box.className = "customPropEditBox";
-
-        let ph2 = document.createElement('div');
-        document.querySelector("#custom_area").appendChild(ph2);
-        ph2.appendChild(name);
-        ph2.appendChild(box);
-        ph2.appendChild(delBtn);
-
-        delBtn.onclick=function (){
-            ph2.outerHTML = "";
-        }
-        delBtn.innerHTML = "Delete";
+        addCustomProperty(key, el);
     })
 }
 
-function saveCustom(){
-    changeAccount(user, undefined, undefined,undefined,getCustomFromHTML());
+function saveCustom() {
+    changeAccount(user, undefined, undefined, undefined, getCustomFromHTML());
 
-    function getCustomFromHTML(){
+    function getCustomFromHTML() {
         let custom = {};
-        document.querySelectorAll(".customPropEditBox").forEach(el=>{
+        document.querySelectorAll(".customPropEditBox").forEach(el => {
             let value = el.value;
-            if(el.getAttribute("cType")=== typeof true){
+            if (el.getAttribute("cType") === typeof true) {
                 value = el.checked;
+            }
+            if (el.getAttribute("cType") === typeof 1) {
+                value = Number(el.value);
             }
             custom[el.getAttribute("customProp")] = value;
         })
         return custom;
     }
+}
+
+function changeNewCtype() {
+    document.querySelector(".new-cValue").type = document.querySelector(".new-cType").value;
+}
+
+function addCustom() {
+    let checked = document.querySelector(".new-cValue").checked;
+    let value = document.querySelector(".new-cValue").value;
+    let name = document.querySelector(".new-cName").value;
+
+    if (document.querySelector(".new-cValue").type === "number") {
+        value = Number(value);
+    }
+    if (document.querySelector(".new-cValue").type === "checkbox") {
+        value = checked;
+    }
+
+    let valid = true;
+    document.querySelectorAll(".customPropEditBox").forEach(el => {
+        let value = el.value;
+        if (el.getAttribute("customProp").trim() === name.trim()) {
+            valid = false;
+        }
+    })
+    if (name.length < 1) valid = false;
+    if (!valid) return;
+
+    addCustomProperty(name, value);
+}
+
+function addCustomProperty(key, value) {
+    let el = value;
+    let delBtn = document.createElement('button');
+
+    let name = document.createElement('div');
+    name.innerHTML = key + "&nbsp;&nbsp;";
+    name.style = "display:inline;";
+    let box;
+    if (typeof el === typeof "") {
+        box = document.createElement('input');
+        box.type = "text";
+        box.value = el;
+    }
+    if (typeof el === typeof 1) {
+        box = document.createElement('input');
+        box.type = "number";
+        box.value = el;
+    }
+    if (typeof el === typeof true) {
+        box = document.createElement('input');
+        box.type = "checkbox";
+        box.checked = el;
+    }
+
+    box.setAttribute("customProp", key);
+    box.setAttribute("cType", typeof el);
+    box.className = "customPropEditBox";
+
+    let ph2 = document.createElement('div');
+    document.querySelector("#custom_area").appendChild(ph2);
+    ph2.appendChild(name);
+    ph2.appendChild(box);
+    ph2.appendChild(delBtn);
+
+    delBtn.onclick = function () {
+        ph2.outerHTML = "";
+    }
+    delBtn.innerHTML = "Delete";
 }

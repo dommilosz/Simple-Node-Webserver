@@ -1,6 +1,6 @@
 import {config} from "./configHandler";
 import {json, Request, Response} from "express";
-import {atob, sendCompletion, sendFile, sendMissingPermissionPage, sendText} from "./wsutils";
+import {atob, sendCompletion, sendFile, sendMissingPermissionPage} from "./wsutils";
 import {loadModules, loadModulesCustom} from "./modules/modulesHandler";
 import {PathLike} from "fs";
 
@@ -56,7 +56,7 @@ async function stopServer() {
 
 async function restartServer() {
     await createServer();
-};
+}
 
 createServer();
 
@@ -65,8 +65,9 @@ server.use(json({limit: '50mb'}));
 
 export let allPermissions: any[] = [];
 export let allPermissionsTree = {};
+
 export module Endpoint {
-    export function createEndPoint(url, type: "get" | "post", cb, perms?) {
+    export function createEndPoint(url:string, type: "get" | "post", cb:(req:Request,res:Response)=> void, perms?:string) {
         if (!perms) perms = "default"
         server[type](url, function (req: Request, res: Response) {
             let authHandler = require("./auth-handler")
@@ -84,16 +85,16 @@ export module Endpoint {
         registerPermission(perms);
     }
 
-    export function get(url, cb, perms?) {
+    export function get(url: string, cb: (req: Request, res: Response) => void, perms?: string) {
         createEndPoint(url, "get", cb, perms);
     }
 
-    export function post(url, cb, perms?) {
+    export function post(url: string, cb: (req: Request, res: Response) => void, perms?: string) {
         createEndPoint(url, "post", cb, perms);
     }
 
-    export function file(file: PathLike, perms?, code?, args?) {
-        get(file, function (req, res) {
+    export function file(file: string, perms?: string, code?: number, args?: {}) {
+        get(file, function (req:Request, res:Response) {
             sendFile(req, res, file, code | 200, args);
         }, perms)
     }
@@ -165,12 +166,14 @@ export function GetParams(req) {
     if (!params.username || params.username == "undefined") params.username = req.cookies.username;
 
     let authh = require("./auth-handler");
-    if (!params.password && (!params.hash || !authh.getHash(params.hash))) {
+
+    if (!params.password) {
         params.password = req.cookies.password;
-        authh.Login(atob(params.username), params.password, req, req.res, false)
     }
 
-
+    if(!params.hash || !authh.getHash(params.hash)){
+        params.hash = authh.Login(atob(params.username), atob(params.password), req, req.res, false);
+    }
     return params
 }
 
