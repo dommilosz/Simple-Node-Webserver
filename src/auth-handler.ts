@@ -1,23 +1,17 @@
 import {allPermissionsTree, Endpoint, expandPermissions, GetParams} from "./webserver";
 import {Request, Response} from "express";
-import {getConfig, registerConfigProp} from "./configHandler";
+import {getAndRegisterConfig} from "./configHandler";
 import {atob, btoa, consoleLog, sendCompletion, sendFile, sendJSON, sendText} from "./wsutils";
 
 const auth = require("./auth-handler");
 export let hashes_arr = {}
 export let checkUsernameOverride: (cb: any) => any;
 
-registerConfigProp("auth.admin_password","admin123");
-registerConfigProp("auth.password","user");
-registerConfigProp("auth.token_lifetime",864000);
-registerConfigProp("auth.invalidTimeout",3000);
-registerConfigProp("auth.allowLoginPageMixins",true);
-
-export let password = getConfig("auth.password");
-export let admin_password = getConfig("auth.admin_password");
-export let token_lifetime = getConfig("auth.token_lifetime");
-export let invalidTimeout = getConfig("auth.invalidTimeout");
-export let allowLoginPageMixins = getConfig("auth.allowLoginPageMixins");
+export let password = getAndRegisterConfig("auth.password","user123");
+export let admin_password = getAndRegisterConfig("auth.admin_password","admin123");
+export let token_lifetime = getAndRegisterConfig("auth.token_lifetime",864000);
+export let invalidTimeout = getAndRegisterConfig("auth.invalidTimeout",3000);
+export let allowLoginPageMixins = getAndRegisterConfig("auth.allowLoginPageMixins",true);
 
 export function checkUsername(username: string) {
     if (checkUsernameOverride) {

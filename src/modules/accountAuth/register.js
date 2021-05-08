@@ -89,6 +89,7 @@ function showObjPopupAcc(el, raw_json, passShow) {
 }
 
 let accounts_perms = {};
+
 function getAccounts() {
     let xhr = new XMLHttpRequest();
     xhr.open('GET', `/accountsRaw${createURLWithHash()}`, false)
@@ -149,11 +150,12 @@ function changeAccountPerms(name, perms) {
 
 let perms = ""
 let allPermissions;
+
 function renderPermsCheckbox() {
     document.querySelector('.curr_acc').innerHTML = user;
-    allPermissions= JSON.parse(XHRGet("/permsRaw"))
+    allPermissions = JSON.parse(XHRGet("/permsRaw"))
     let accounts = JSON.parse(XHRGet('/accountsRaw'));
-    perms = accounts[user].permissions.replaceAll(";","\n");
+    perms = accounts[user].permissions.replaceAll(";", "\n");
     document.querySelector('#perms_area').value = perms;
     document.querySelector('#perms_area').onchange = function () {
         redrawBoxes();
@@ -166,14 +168,15 @@ function savePerms() {
 }
 
 let allowedPerms = {};
-function generateAllowedPerms(perms,parent){
-    Object.keys(perms).forEach(key=>{
+
+function generateAllowedPerms(perms, parent) {
+    Object.keys(perms).forEach(key => {
         let el = perms[key];
         allowedPerms[parent]
     })
 }
 
-function redrawBoxes(){
+function redrawBoxes() {
 
 
     let placeholder = document.getElementById('perms');
@@ -246,7 +249,7 @@ function renderPermsBoxes(level, json, placeholder, orgperm) {
         let input = document.createElement('input');
         input.type = 'checkbox';
         input.value = orgperm2;
-        input.id = "permission-box-"+key;
+        input.id = "permission-box-" + key;
         input.onclick = function () {
             for (let i = 0; i < level + 1; i++) {
                 refreshBoxes(input);
@@ -271,7 +274,7 @@ function renderPermsBoxes(level, json, placeholder, orgperm) {
     })
     Object.keys(json).forEach(key => {
         let orgperm2 = ((orgperm !== "" ? (orgperm + ".") : "") + key)
-        let input = document.querySelector("#permission-box-"+key);
+        let input = document.querySelector("#permission-box-" + key);
         if (checkPermission(perms, orgperm2)) {
             input.checked = true;
         }

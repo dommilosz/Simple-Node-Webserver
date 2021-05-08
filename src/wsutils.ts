@@ -1,7 +1,7 @@
 import * as fs from "fs";
+import {PathLike} from "fs";
 import * as mime from 'mime';
 import * as crypto from "crypto";
-import {PathLike} from "fs";
 
 export function sendFile(req, res, path: PathLike, status: number, args = {}) {
     // @ts-ignore
@@ -75,12 +75,12 @@ export async function XHR_GET(url) {
     return await httpGet(url);
 }
 
-export async function XHR_POST(url,data:string){
+export async function XHR_POST(url, data: string) {
     let str = await (new Promise<string>((r, j) => {
         let handler;
-        if(url.startsWith("https://")){
+        if (url.startsWith("https://")) {
             handler = require('https');
-        }else{
+        } else {
             handler = require('http');
         }
 
@@ -102,12 +102,12 @@ export async function XHR_POST(url,data:string){
     return str;
 }
 
-async function httpGet(url:string) {
-     let str = await (new Promise<string>((r, j) => {
+async function httpGet(url: string) {
+    let str = await (new Promise<string>((r, j) => {
         let handler;
-        if(url.startsWith("https://")){
+        if (url.startsWith("https://")) {
             handler = require('https');
-        }else{
+        } else {
             handler = require('http');
         }
 
@@ -134,9 +134,10 @@ export function sha256(pwd) {
     return crypto.createHash('sha256').update(pwd).digest('hex');
 }
 
-export function sendMissingPermissionPage(perms,res){
+export function sendMissingPermissionPage(perms, res) {
     sendText(res, `<script src="jsu.js"></script><h1>403 - Forbidden</h1>You don't have access to this resource. <a href="#" onclick="logout()">Logout</a><br>Permission: <code>${perms}</code>`, 403)
 }
-export function sendMissingPage(res){
+
+export function sendMissingPage(res) {
     sendText(res, "<h1>Error 404 - Not Found</h1><br/><span>Weird place, Void. If you think that something except of this text should be here contact the administrator</span>", 404)
 }

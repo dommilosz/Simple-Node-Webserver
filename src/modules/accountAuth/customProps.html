@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Custom Properties</title>
     <script src="/jsu.js"></script>
-    <script src="/register.js" defer></script>
+    <script defer src="/register.js"></script>
     <script>
         let user = "%key=%user%"
         disableLogoutBtn();
@@ -16,8 +16,14 @@
 </div>
 <div id="custom_area"></div>
 <br>
-<input type="text" placeholder="name" class="new-cName"><select onchange="changeNewCtype()" class="new-cType"><option value="text">Text</option><option value="number">Number</option><option value="checkbox">Boolean</option></select><input class="new-cValue" type="text" placeholder="value">
-<button onclick="addCustom()">ADD</button><br><button onclick="saveCustom()">SAVE</button>
+<input class="new-cName" placeholder="name" type="text"><select class="new-cType" onchange="changeNewCtype()">
+    <option value="text">Text</option>
+    <option value="number">Number</option>
+    <option value="checkbox">Boolean</option>
+</select><input class="new-cValue" placeholder="value" type="text">
+<button onclick="addCustom()">ADD</button>
+<br>
+<button onclick="saveCustom()">SAVE</button>
 <div id="perms"></div>
 </body>
 </html>

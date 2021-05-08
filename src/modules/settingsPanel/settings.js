@@ -1,12 +1,12 @@
-function restartServer(){
+function restartServer() {
     postAction("restart");
 }
 
-function stopServer(){
+function stopServer() {
     postAction("stop");
 }
 
-function postAction(actionType){
-    let resp = XHRPost("/serverAction",{actionType:actionType});
+function postAction(actionType) {
+    let resp = XHRPost("/serverAction", {actionType: actionType});
     showStatusModal(resp);
 }

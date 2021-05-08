@@ -1,7 +1,6 @@
 import {Endpoint} from "../../webserver";
-import {checkHashes, getHash, hashes_arr, setProp} from "../../auth-handler";
+import {checkHashes, getHash, hashes_arr, setProp, token_lifetime} from "../../auth-handler";
 import {sendFile, sendJSON, sendText} from "../../wsutils";
-import {config} from "../../configHandler";
 
 Endpoint.get('/hashes', function (req, res) {
     sendJSON(res, hashes_arr, 200)
@@ -36,7 +35,7 @@ Endpoint.post('/setHash', function (req, res) {
     }
     if (body.type == "invalid") {
         setProp(hash.hash, "expired", true)
-        setProp(hash.hash, "lastUpdated", Math.round(+new Date() / 1000) - (config.auth.token_lifetime + 60))
+        setProp(hash.hash, "lastUpdated", Math.round(+new Date() / 1000) - (token_lifetime + 60))
         checkHashes()
     }
     if (body.type == "admin") {

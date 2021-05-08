@@ -1,7 +1,8 @@
 import * as fs from "fs";
-import {config, getConfig, registerConfigProp} from "../configHandler";
+import {getAndRegisterConfig} from "../configHandler";
 
 export let loadedModules: any = {}
+export let showModuleLoadingErrors = getAndRegisterConfig("showModuleLoadingErrors", true);
 
 export function requireModule(name: string) {
     if (!loadedModules) loadedModules = {}
@@ -13,12 +14,13 @@ export function requireModule(name: string) {
 }
 
 export let currentModule = "";
+
 export function loadModule(name: string, type: string) {
     if (!loadedModules) loadedModules = {}
     if (!loadedModules[name] || !loadedModules[name].loaded) {
         try {
-            registerConfigProp(`modules.${name}.enabled`,true);
-            if(!getConfig(`modules.${name}.enabled`)){
+            let enabled = getAndRegisterConfig(`modules.${name}.enabled`, true);
+            if (!enabled) {
                 return;
             }
 
@@ -35,7 +37,7 @@ export function loadModule(name: string, type: string) {
             return module;
         } catch (ex) {
             console.log(`Loading ${name} - FAIL`)
-            if (config.showModuleLoadingErrors) {
+            if (showModuleLoadingErrors) {
                 console.log(ex);
             }
             loadedModules[name] = {name: name, loaded: false}

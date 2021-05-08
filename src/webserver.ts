@@ -1,13 +1,12 @@
-import {config} from "./configHandler";
+import {getAndRegisterConfig} from "./configHandler";
 import {json, Request, Response} from "express";
 import {atob, sendCompletion, sendFile, sendMissingPermissionPage} from "./wsutils";
 import {loadModules, loadModulesCustom} from "./modules/modulesHandler";
-import {PathLike} from "fs";
 
 const cookieParser = require('cookie-parser');
 
 export let server = require('express')();
-export let port = config.ports.web;
+export let port = getAndRegisterConfig("ports.web", 8080)
 
 export let overrideCreateCB;
 
@@ -67,7 +66,7 @@ export let allPermissions: any[] = [];
 export let allPermissionsTree = {};
 
 export module Endpoint {
-    export function createEndPoint(url:string, type: "get" | "post", cb:(req:Request,res:Response)=> void, perms?:string) {
+    export function createEndPoint(url: string, type: "get" | "post", cb: (req: Request, res: Response) => void, perms?: string) {
         if (!perms) perms = "default"
         server[type](url, function (req: Request, res: Response) {
             let authHandler = require("./auth-handler")
@@ -78,7 +77,7 @@ export module Endpoint {
                     authHandler.sendLoginPage(req, res, perms);
                     return;
                 }
-                sendMissingPermissionPage(perms,res);
+                sendMissingPermissionPage(perms, res);
             }
 
         });
@@ -94,7 +93,7 @@ export module Endpoint {
     }
 
     export function file(file: string, perms?: string, code?: number, args?: {}) {
-        get(file, function (req:Request, res:Response) {
+        get(file, function (req: Request, res: Response) {
             sendFile(req, res, file, code | 200, args);
         }, perms)
     }
@@ -108,16 +107,22 @@ Endpoint.get("/forage.js", function (req: Request, res: Response) {
 });
 Endpoint.post("/serverAction", function (req: Request, res: Response) {
     let body = req.body;
-    if(!body)sendCompletion(res,"Body not found",true,400);
-    if(!body.actionType)sendCompletion(res,"Action not found",true,400);
+    if (!body) sendCompletion(res, "Body not found", true, 400);
+    if (!body.actionType) sendCompletion(res, "Action not found", true, 400);
     let actionType = body.actionType;
 
-    switch(actionType){
-        case "restart":{restartServer(); break;}
-        case "stop":{stopServer(); break;}
+    switch (actionType) {
+        case "restart": {
+            restartServer();
+            break;
+        }
+        case "stop": {
+            stopServer();
+            break;
+        }
     }
 
-},"admin.manage");
+}, "admin.manage");
 
 
 export function registerPermission(perms) {
@@ -171,7 +176,7 @@ export function GetParams(req) {
         params.password = req.cookies.password;
     }
 
-    if(!params.hash || !authh.getHash(params.hash)){
+    if (!params.hash || !authh.getHash(params.hash)) {
         params.hash = authh.Login(atob(params.username), atob(params.password), req, req.res, false);
     }
     return params

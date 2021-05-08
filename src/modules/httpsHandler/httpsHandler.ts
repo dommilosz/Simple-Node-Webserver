@@ -1,13 +1,13 @@
-import {getFilePath, readFileFromStorage_Safe} from "../../fileStorage";
-import {listeningServer, overrideCreate, port, server} from "../../webserver";
+import {readFileFromStorage_Safe} from "../../fileStorage";
+import {overrideCreate, port, server} from "../../webserver";
 import * as https from "https";
 import * as net from "net";
 import * as http from "http";
 import * as express from "express";
-const session = require("cookie-session");
-import {getConfig, registerConfigProp} from "../../configHandler";
-import * as fs from "fs";
+import {getAndRegisterConfig, getConfig} from "../../configHandler";
 import {currentModule} from "../modulesHandler";
+
+const session = require("cookie-session");
 
 export let cert = readFileFromStorage_Safe("cert.pem");
 export let key = readFileFromStorage_Safe("key.pem");
@@ -21,7 +21,7 @@ if (cert == "" || key == "") {
     })
 }
 
-registerConfigProp(`modules.${currentModule}.hsts`,true);
+let hsts = getAndRegisterConfig(`modules.${currentModule}.hsts`, true);
 
 async function createServer() {
     cert = readFileFromStorage_Safe("cert.pem");
@@ -30,8 +30,8 @@ async function createServer() {
         key: key,
         cert: cert
     };
-    if(getConfig(`modules.${currentModule}.hsts`)===true){
-        server.use(function (req,res,next){
+    if (getConfig(`modules.${currentModule}.hsts`) === true) {
+        server.use(function (req, res, next) {
             let maxAge = "63072000";
             let compiled = 'max-age=' + maxAge;
             compiled += '; includeSubDomains';
@@ -108,10 +108,10 @@ module httpx {
         // @ts-ignore
         server.http = http.createServer(handler);
 
-        try{
+        try {
             // @ts-ignore
             server.https = https.createServer(opts, handler);
-        }catch(ex){
+        } catch (ex) {
             console.log("Error when creating https server!");
             console.log(ex);
         }

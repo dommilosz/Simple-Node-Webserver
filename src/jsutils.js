@@ -128,8 +128,8 @@ async function bodyOnLoad() {
 }
 
 async function renderTheme() {
-    document.querySelectorAll(".theme-css").forEach(el=>el.outerHTML="");
-    if(!allowThemes)return;
+    document.querySelectorAll(".theme-css").forEach(el => el.outerHTML = "");
+    if (!allowThemes) return;
     let themeStyle = document.createElement("style");
     themeStyle.className = "theme-css"
     document.head.appendChild(themeStyle);
@@ -168,7 +168,7 @@ async function renderTheme() {
     }
 
     let compiledVars = "";
-    Object.keys(themeVars).forEach(key=>{
+    Object.keys(themeVars).forEach(key => {
         let el = themeVars[key];
         compiledVars += `--${key}: ${el};\n`;
     })
@@ -265,7 +265,7 @@ function showAccountBar() {
     bar.appendChild(btn_manage)
 
     let btn_theme = document.createElement('div');
-    btn_theme.innerHTML = "Theme: "+theme;
+    btn_theme.innerHTML = "Theme: " + theme;
     btn_theme.style["text-align"] = 'center';
     btn_theme.style.backgroundColor = "#404040";
     btn_theme.style.height = "25px";
@@ -277,9 +277,9 @@ function showAccountBar() {
     btn_theme.onmouseleave = function () {
         btn_theme.style.backgroundColor = "#404040";
     }
-    btn_theme.onclick= async function () {
-        await changeTheme(theme==="white"?"dark":"white");
-        btn_theme.innerHTML = "Theme: "+theme;
+    btn_theme.onclick = async function () {
+        await changeTheme(theme === "white" ? "dark" : "white");
+        btn_theme.innerHTML = "Theme: " + theme;
     }
     bar.appendChild(btn_theme)
 
@@ -419,9 +419,9 @@ function createListEntry(array, name, renderDiv, objCallback) {
     renderDiv.append(results);
 
     document.querySelectorAll('.cat').forEach(el => {
-        let r = Math.round(Math.random() * (155+(themeWhite ? -100 : +100))) + (themeWhite ? 100 : -100)
-        let g = Math.round(Math.random() * (155+(themeWhite ? -100 : +100))) + (themeWhite ? 100 : -100)
-        let b = Math.round(Math.random() * (155+(themeWhite ? -100 : +100))) + (themeWhite ? 100 : -100)
+        let r = Math.round(Math.random() * (155 + (themeWhite ? -100 : +100))) + (themeWhite ? 100 : -100)
+        let g = Math.round(Math.random() * (155 + (themeWhite ? -100 : +100))) + (themeWhite ? 100 : -100)
+        let b = Math.round(Math.random() * (155 + (themeWhite ? -100 : +100))) + (themeWhite ? 100 : -100)
         el.style['background-color'] = `rgb(${r},${g},${b})`
     })
     return results;

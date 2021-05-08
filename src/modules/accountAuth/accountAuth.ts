@@ -8,7 +8,7 @@ import {
     overrideReturnPassword
 } from "../../auth-handler";
 import {atob, sendCompletion, sendFile, sendJSON, sendText} from "../../wsutils";
-import {config, getConfig, registerConfigProp} from "../../configHandler";
+import {getAndRegisterConfig} from "../../configHandler";
 import {currentModule} from "../modulesHandler";
 
 let accounts = {}
@@ -20,7 +20,7 @@ try {
 
 overrideReturnPassword(function (req, username, isAdmin) {
     if (username == "root" && isAdmin) {
-        return config.admin_password;
+        return admin_password
     }
     if (accounts[username]) {
         return accounts[username].password;
@@ -41,9 +41,7 @@ overrideCheckUserPerms((username, password) => {
     return (accounts[username].permissions)
 })
 
-
-registerConfigProp(`modules.${currentModule}.registerNeedPermissions`, true);
-export let registerNeedPermissions = getConfig(`modules.${currentModule}.registerNeedPermissions`);
+export let registerNeedPermissions = getAndRegisterConfig(`modules.${currentModule}.registerNeedPermissions`, true);
 
 Endpoint.get('/register', function (req, res) {
     sendFile(req, res, 'src/modules/accountAuth/register.html', 200)
@@ -158,15 +156,15 @@ export function removeAcc(name) {
     writeFileToStorage("accounts.json", JSON.stringify(accounts));
 }
 
-export function renameAcc(name,newName){
-    if(name==newName)return;
+export function renameAcc(name, newName) {
+    if (name == newName) return;
     accounts[newName] = accounts[name];
     delete accounts[name];
 }
 
 export function changeProps(name, pass, isAdmin, newName, custom?: { name: string, value: boolean | string | number }) {
     if (newName) {
-        renameAcc(name,newName);
+        renameAcc(name, newName);
         return;
     }
     if (accounts[name].admin)
@@ -188,7 +186,7 @@ export function changeProps(name, pass, isAdmin, newName, custom?: { name: strin
 export let customProps = {};
 
 export function registerCustomAccountProp(name, defVal: string | boolean | number) {
-    customProps[name] = {type: typeof defVal, value: defVal,name:name};
+    customProps[name] = {type: typeof defVal, value: defVal, name: name};
     checkAccounts();
 }
 
@@ -203,7 +201,7 @@ Endpoint.get('/accountsRaw', function (req, res) {
 }, "auth.accounts")
 
 export function getAccount(username) {
-    if(username==="root"){
+    if (username === "root") {
         return {
             "username": "root",
             "password": admin_password,
@@ -217,13 +215,13 @@ export function getAccount(username) {
     return accounts[username];
 }
 
-export function checkAccounts(){
+export function checkAccounts() {
     Object.keys(accounts).forEach(key => {
         let el = accounts[key];
         if (!el.customProps) el.customProps = {};
         Object.keys(customProps).forEach(key2 => {
             let el2 = customProps[key2];
-            if(!el.customProps[el2.name]){
+            if (!el.customProps[el2.name]) {
                 el.customProps[el2.name] = el2.value;
             }
         })

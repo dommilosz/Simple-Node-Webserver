@@ -1,31 +1,15 @@
 import {readFileFromStorageJSON, writeFileToStorage} from "./fileStorage";
 
-export let config: any;
-
-export const defaultConfig = {
-    "ports": {
-        "web": 8080
-    },
-    "openBrowserOnStart": false,
-    "showModuleLoadingErrors": false,
-}
-
+let config: any;
 try {
     config = readFileFromStorageJSON('config.json');
 } catch {
-    config = defaultConfig;
+    config = {};
     console.log("Error while loading config. Using default options!")
     writeFileToStorage('config.json', JSON.stringify(config, null, 4))
     console.log("Creating config file.")
 
 }
-
-Object.keys(defaultConfig).forEach(key => {
-    if (!config[key]) {
-        config[key] = defaultConfig[key]
-    }
-    writeFileToStorage('config.json', JSON.stringify(config, null, 4))
-})
 
 export function setConfig(key, val) {
     let parts = key.split('.')
@@ -59,6 +43,11 @@ export function getConfig(key) {
     })
 
     return obj[parts[parts.length - 1]];
+}
+
+export function getAndRegisterConfig(key,defVal){
+    registerConfigProp(key,defVal);
+    return getConfig(key);
 }
 
 export function registerConfigProp(key, defVal) {

@@ -1,5 +1,5 @@
 import {Endpoint} from "../../webserver";
-import {checkLogin, checkPermission, sendLoginPage} from "../../auth-handler";
+import {checkPermission} from "../../auth-handler";
 import {sendMissingPage, sendMissingPermissionPage, sendText} from "../../wsutils";
 import {readFileFromStorageJSON_Safe} from "../../fileStorage";
 
@@ -30,11 +30,11 @@ Endpoint.get('/view/*', function (req: any, res: any) {
             if (checkPermission(req, file.perm)) {
                 sendText(res, file.html, 200);
             } else {
-                sendMissingPermissionPage(file.perm,res);
+                sendMissingPermissionPage(file.perm, res);
             }
 
         }
 
     }
 
-},"user.filehost.view")
+}, "user.filehost.view")
