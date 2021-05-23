@@ -1,5 +1,8 @@
 async function getLocalForage() {
-    await import("/forage.js");
+    if (typeof localforage === 'undefined') {
+        await import("/forage.js");
+    }
+
     await localforage.setDriver([
         localforage.INDEXEDDB,
         localforage.WEBSQL,
@@ -87,6 +90,16 @@ let allowThemes = true;
 let theme = "white";
 let themeWhite = true;
 
+function inIframe () {
+    try {
+        return window.self !== window.top;
+    } catch (e) {
+        return true;
+    }
+}
+
+if(inIframe())disableLogoutBtn()
+
 function disableLogoutBtn() {
     hideLogoutBtn = true;
 }
@@ -113,7 +126,7 @@ async function renderTheme() {
     }
     theme = await getForageItem("theme");
     if (!theme) {
-        await changeTheme("white");
+        await changeTheme("dark");
         return await renderTheme();
     }
     themeStyle.innerHTML = returnThemeCSS(theme);
@@ -360,7 +373,7 @@ function showStatusModal(text) {
     }
 }
 
-function createListEntry(array, name, renderDiv, objCallback) {
+function createListEntry(array, name, renderDiv, objCallback, shownFromStart) {
     if (document.querySelector(`.cat_${name}`)) {
         document.querySelector(`.cat_${name}`).outerHTML = "";
     }
@@ -384,6 +397,11 @@ function createListEntry(array, name, renderDiv, objCallback) {
     div.style = "background-color: rgb(137, 105, 106);border-style: dotted;margin: 5px;";
 
     clickable.onclick = () => {
+        show()
+    }
+
+
+    function show() {
         document.querySelectorAll('.cat_objs').forEach(el => {
             el.outerHTML = ""
         })
@@ -412,7 +430,14 @@ function createListEntry(array, name, renderDiv, objCallback) {
         let b = Math.round(Math.random() * (155 + (themeWhite ? -100 : +100))) + (themeWhite ? 100 : -100)
         el.style['background-color'] = `rgb(${r},${g},${b})`
     })
+    if (shownFromStart) show();
     return results;
+}
+
+function createButton(name,cb){
+    return {
+        name,onclick:cb
+    }
 }
 
 function showObjPopup(name, props, buttons, closecb) {
@@ -525,6 +550,7 @@ function showIFramePopup(src, buttons, closecb) {
     document.body.style.overflowY = 'hidden';
     if (document.querySelector(".objPopup0_0"))
         document.querySelector(".objPopup0_0").outerHTML = "";
+    if(!src)return;
     if (!buttons) buttons = [];
     let wholePopup = document.createElement('div');
     let bg = document.createElement('div');
@@ -585,6 +611,7 @@ function showHTMLPopup(html, buttons, closecb) {
     document.body.style.overflowY = 'hidden';
     if (document.querySelector(".objPopup0_0"))
         document.querySelector(".objPopup0_0").outerHTML = "";
+    if(!html)return;
     if (!buttons) buttons = [];
     let wholePopup = document.createElement('div');
     let bg = document.createElement('div');

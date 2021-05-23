@@ -11,8 +11,7 @@ export function sendFile(req, res, path: PathLike, status: number, args = {}) {
     Object.keys(args).forEach(key => {
         content = replaceAll(content, `"%key=%${key}%"`, `(JSON.parse(atob('${btoa(JSON.stringify(args[key]))}')))`)
     })
-    res.setHeader("Content-Length", byteSize(content))
-    res.setHeader("Content-Checksum", sha256(content))
+    addChecksumAndLength(res, content)
     res.setHeader("Content-Type", type)
     res.writeHead(status)
     res.write(content);
@@ -51,20 +50,26 @@ export function consoleLog(str: String) {
 }
 
 export function sendText(res, text, code) {
-    res.setHeader("Content-Length", byteSize(text))
-    res.setHeader("Content-Checksum", sha256(text))
-    res.writeHead(code, {"Content-Type": "text/html; charset=utf-8"})
-    res.write(text)
-    res.end()
+    try {
+        addChecksumAndLength(res, text)
+        res.writeHead(code, {"Content-Type": "text/html; charset=utf-8"})
+        if (text)
+            res.write(text)
+        res.end()
+    } catch {
+    }
 }
 
 export function sendJSON(res, json, code) {
-    let txt = JSON.stringify(json)
-    res.setHeader("Content-Length", byteSize(txt))
-    res.setHeader("Content-Checksum", sha256(txt))
-    res.writeHead(code, {"Content-Type": "application/json"})
-    res.write(txt)
-    res.end()
+    try {
+        let txt = JSON.stringify(json)
+        addChecksumAndLength(res, txt)
+        res.writeHead(code, {"Content-Type": "application/json"})
+        if (txt)
+            res.write(txt)
+        res.end()
+    } catch {
+    }
 }
 
 export function sendCompletion(res, text, error, code) {
@@ -131,6 +136,7 @@ export function byteSize(s) {
 }
 
 export function sha256(pwd) {
+    if (!pwd) return undefined;
     return crypto.createHash('sha256').update(pwd).digest('hex');
 }
 
@@ -140,4 +146,10 @@ export function sendMissingPermissionPage(perms, res) {
 
 export function sendMissingPage(res) {
     sendText(res, "<h1>Error 404 - Not Found</h1><br/><span>Weird place, Void. If you think that something except of this text should be here contact the administrator</span>", 404)
+}
+
+export function addChecksumAndLength(res, content) {
+    if (!content) return;
+    res.setHeader("Content-Length", byteSize(content))
+    res.setHeader("Content-Checksum", sha256(content))
 }

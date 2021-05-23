@@ -81,6 +81,14 @@ Endpoint.post('/registerAcc', function (req, res) {
         sendCompletion(res, "Wrong details", true, 200);
         return;
     }
+    if (body.username.length>255||body.password.length>255||JSON.stringify(body).length>768) {
+        sendCompletion(res, "Wrong details", true, 200);
+        return;
+    }
+    if (body.password.length < 8 || body.password.length < 8) {
+        sendCompletion(res, "Password too short", true, 200);
+        return;
+    }
     let isAdmin = false;
     if (body.level === "admin" && checkPermission(req, "auth.register.admin")) isAdmin = true;
     if (accounts[atob(body.username)]) {

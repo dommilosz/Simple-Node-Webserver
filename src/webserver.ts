@@ -2,11 +2,12 @@ import {getAndRegisterConfig} from "./configHandler";
 import {json, Request, Response} from "express";
 import {atob, sendCompletion, sendFile, sendMissingPermissionPage} from "./wsutils";
 import {loadModules, loadModulesCustom} from "./modules/modulesHandler";
+import helmet from "helmet";
 
 const cookieParser = require('cookie-parser');
 
 export let server = require('express')();
-export let port = getAndRegisterConfig("ports.web", 8080)
+export let port = getAndRegisterConfig("ports.web", 80)
 
 export let overrideCreateCB;
 
@@ -14,43 +15,39 @@ export function overrideCreate(cb) {
     overrideCreateCB = cb;
 }
 
-export let listeningServer;
+export let events :{before:any[],default:any[],after:any[],creation:any[]}= {before:[],default:[],after:[],creation:[]}
+export function addServerEventListener(type:"before"|"default"|"after"|"creation", cb){
+    events[type].push(cb);
+}
+loadModulesCustom("before");
+events.creation.forEach(cb=>cb());
+
+
 server.disable('x-powered-by')
 
 export async function Create() {
-    loadModulesCustom("before");
     console.log(`Starting server on port ${port}`)
-    let _listeningServer;
     if (overrideCreateCB) {
-        _listeningServer = await overrideCreateCB();
-        loadModules();
-        return _listeningServer;
+        await overrideCreateCB();
     }
 
-    await (new Promise<void>(function (r, j) {
-        _listeningServer = server.listen(port, () => {
-            r();
-        });
-    }))
+    if(!overrideCreateCB)
+    await server.listen(port);
+
     console.log("server starting on port : " + port)
+    events.default.forEach(cb=>cb());
     loadModules();
+    events.after.forEach(cb=>cb());
     loadModulesCustom("after");
-    return _listeningServer;
 }
 
 async function createServer() {
     await stopServer();
-    listeningServer = await Create();
+    await Create();
 }
 
 async function stopServer() {
-    if (!listeningServer) return;
-    try {
-        console.log("Stopping server");
-        listeningServer.close();
-    } catch {
 
-    }
 }
 
 async function restartServer() {
@@ -61,6 +58,7 @@ createServer();
 
 server.use(cookieParser());
 server.use(json({limit: '50mb'}));
+events.before.forEach(cb=>cb());
 
 export let allPermissions: any[] = [];
 export let allPermissionsTree = {};

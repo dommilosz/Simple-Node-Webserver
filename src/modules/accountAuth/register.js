@@ -99,7 +99,7 @@ function getAccounts() {
     showObjPopup();
     createListEntry(Object.keys(raw_json), "accounts", document.querySelector("#accounts-user"), function (el, i) {
         showObjPopupAcc(el, raw_json, false)
-    })
+    },true)
 }
 
 function removeAccount(name) {
