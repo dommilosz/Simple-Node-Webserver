@@ -18,6 +18,14 @@ export function sendFile(req, res, path: PathLike, status: number, args = {}) {
     res.end()
 }
 
+export function sendFileRaw(req, res, path: PathLike, status: number) {
+    let content = fs.readFileSync(path);
+    res.writeHead(status)
+    res.write(content);
+    res.end()
+}
+
+
 export function replaceAll(content: string, s: string, s2: string) {
     return content.split(s).join(s2)
 }
@@ -142,6 +150,9 @@ export function sha256(pwd) {
 
 export function sendMissingPermissionPage(perms, res) {
     sendText(res, `<script src="jsu.js"></script><h1>403 - Forbidden</h1>You don't have access to this resource. <a href="#" onclick="logout()">Logout</a><br>Permission: <code>${perms}</code>`, 403)
+}
+export function sendFlaggedPage(reason, res) {
+    sendText(res, `<script src="jsu.js"></script><h1>403 - Forbidden. Account flagged</h1>You don't have access to this resource. <a href="#" onclick="logout()">Logout</a><br>Reason: ${reason}`, 403)
 }
 
 export function sendMissingPage(res) {

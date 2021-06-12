@@ -1,7 +1,7 @@
 import {allPermissionsTree, Endpoint, expandPermissions, GetParams} from "./webserver";
 import {Request, Response} from "express";
 import {getAndRegisterConfig} from "./configHandler";
-import {atob, btoa, consoleLog, sendCompletion, sendFile, sendJSON, sendText} from "./wsutils";
+import {atob, btoa, consoleLog, sendCompletion, sendFile, sendFlaggedPage, sendJSON, sendText} from "./wsutils";
 
 const auth = require("./auth-handler");
 export let hashes_arr = {}
@@ -10,7 +10,7 @@ export let checkUsernameOverride: (cb: any) => any;
 export let password = getAndRegisterConfig("auth.password","user123");
 export let admin_password = getAndRegisterConfig("auth.admin_password","admin123");
 export let token_lifetime = getAndRegisterConfig("auth.token_lifetime",864000);
-export let invalidTimeout = getAndRegisterConfig("auth.invalidTimeout",3000);
+export let rateLimit = getAndRegisterConfig("auth.rateLimit",5);
 export let allowLoginPageMixins = getAndRegisterConfig("auth.allowLoginPageMixins",true);
 
 export function checkUsername(username: string) {
@@ -61,7 +61,11 @@ export function checkPermission(req, perm) {
     if (!hash) return false;
     let canAccess = false;
     let params = GetParams(req);
-    let perms = checkUserPerms(atob(params.username), params.password);
+    let perms:string = checkUserPerms(atob(params.username), params.password);
+    if(perms.startsWith("noaccess-reason:")){
+        sendFlaggedPage(perms.split("noaccess-reason:")[1],req.res);
+        return false;
+    }
     perms.split(';').forEach(el => {
         if (checkPerm(el, perm)) canAccess = true;
     })
@@ -132,8 +136,7 @@ Endpoint.post("/auth", function (req: Request, res: Response) {
         return;
     }
     sendCompletion(res, `INVALID PASSWORD`, true, 403)
-    auth.setConnTimeout(req, invalidTimeout)
-});
+},undefined,rateLimit);
 
 export function Login(username, password, req, res, sendResponse: boolean) {
     try {
@@ -165,7 +168,6 @@ export function Authenticate(username, password, req) {
     let requiredPasswordAdmin = returnPassword(req, username, true)
     if ((requiredPasswordAdmin != password) && (requiredPassword != password)) {
         consoleLog(`[INVALID_PASS] - "${password}" - USER: "${username}"`)
-        auth.setConnTimeout(req, invalidTimeout)
         throw "INVALID PASSWORD"
     }
     return AddHash(username, password);
@@ -235,10 +237,6 @@ export function Check_UHash(hash, username) {
 }
 
 let timeouts = {};
-
-export function setConnTimeout(req, number) {
-    timeouts[req.ip] = (+new Date()) + number;
-}
 
 export function checkLogin(req) {
     let params: any = GetParams(req)

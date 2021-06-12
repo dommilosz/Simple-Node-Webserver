@@ -172,6 +172,7 @@ function returnThemeCSS(theme) {
     if (theme === "no-theme") {
         return `body{
             ${compiledVars};
+        }
         `
     }
     return `
@@ -187,6 +188,7 @@ function returnThemeCSS(theme) {
         
         body{
             ${compiledVars};
+        }
         `
 }
 

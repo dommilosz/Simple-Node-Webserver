@@ -1,13 +1,14 @@
 import {getAndRegisterConfig} from "./configHandler";
 import {json, Request, Response} from "express";
-import {atob, sendCompletion, sendFile, sendMissingPermissionPage} from "./wsutils";
+import {atob, sendCompletion, sendFile, sendMissingPermissionPage, sendText} from "./wsutils";
 import {loadModules, loadModulesCustom} from "./modules/modulesHandler";
-import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 
 const cookieParser = require('cookie-parser');
 
 export let server = require('express')();
 export let port = getAndRegisterConfig("ports.web", 80)
+export let debugRequests = getAndRegisterConfig("debugRequests", false)
 
 export let overrideCreateCB;
 
@@ -15,12 +16,19 @@ export function overrideCreate(cb) {
     overrideCreateCB = cb;
 }
 
-export let events :{before:any[],default:any[],after:any[],creation:any[]}= {before:[],default:[],after:[],creation:[]}
-export function addServerEventListener(type:"before"|"default"|"after"|"creation", cb){
+export let events: { before: any[], default: any[], after: any[], creation: any[] } = {
+    before: [],
+    default: [],
+    after: [],
+    creation: []
+}
+
+export function addServerEventListener(type: "before" | "default" | "after" | "creation", cb) {
     events[type].push(cb);
 }
+
 loadModulesCustom("before");
-events.creation.forEach(cb=>cb());
+events.creation.forEach(cb => cb());
 
 
 server.disable('x-powered-by')
@@ -31,13 +39,13 @@ export async function Create() {
         await overrideCreateCB();
     }
 
-    if(!overrideCreateCB)
-    await server.listen(port);
+    if (!overrideCreateCB)
+        await server.listen(port);
 
     console.log("server starting on port : " + port)
-    events.default.forEach(cb=>cb());
+    events.default.forEach(cb => cb());
     loadModules();
-    events.after.forEach(cb=>cb());
+    events.after.forEach(cb => cb());
     loadModulesCustom("after");
 }
 
@@ -58,18 +66,35 @@ createServer();
 
 server.use(cookieParser());
 server.use(json({limit: '50mb'}));
-events.before.forEach(cb=>cb());
+events.before.forEach(cb => cb());
 
 export let allPermissions: any[] = [];
 export let allPermissionsTree = {};
 
 export module Endpoint {
-    export function createEndPoint(url: string, type: "get" | "post", cb: (req: Request, res: Response) => void, perms?: string) {
-        if (!perms) perms = "default"
-        server[type](url, function (req: Request, res: Response) {
+    export function createEndPoint(url: string, type: "get" | "post", cb: (req: Request, res: Response) => void, perms = "default", _rateLimit = 60 * 5) {
+        if (!perms) perms = "default";
+        const apiLimiter = rateLimit({
+            windowMs: 5 * 60 * 1000, // 5 minutes
+            max: _rateLimit
+        });
+        server.use(url, apiLimiter);
+        server[type](url, async function (req: Request, res: Response) {
+            if (debugRequests) {
+                console.log(`[${type}]: ${url}, body:${JSON.stringify(req.body)}`)
+            }
             let authHandler = require("./auth-handler")
             if (authHandler.checkPermission(req, perms)) {
-                cb(req, res);
+                try {
+                    await cb(req, res);
+                    if(!res.headersSent){
+                        console.error("Function returned without sending headers: ");
+                        console.error(`[${type}]: ${url}, body:${JSON.stringify(req.body)}`)
+                        sendText(res,"",500);
+                    }
+                } catch (e) {
+                    sendText(res, e.message, 500);
+                }
             } else {
                 if (!authHandler.checkLogin(req)) {
                     authHandler.sendLoginPage(req, res, perms);
@@ -82,17 +107,17 @@ export module Endpoint {
         registerPermission(perms);
     }
 
-    export function get(url: string, cb: (req: Request, res: Response) => void, perms?: string) {
-        createEndPoint(url, "get", cb, perms);
+    export function get(url: string, cb: (req: Request, res: Response) => void, perms = "default", rateLimit = 60*5) {
+        createEndPoint(url, "get", cb, perms, rateLimit);
     }
 
-    export function post(url: string, cb: (req: Request, res: Response) => void, perms?: string) {
-        createEndPoint(url, "post", cb, perms);
+    export function post(url: string, cb: (req: Request, res: Response) => void, perms = "default", rateLimit = 60*5) {
+        createEndPoint(url, "post", cb, perms, rateLimit);
     }
 
-    export function file(file: string, perms?: string, code?: number, args?: {}) {
+    export function file(file: string, perms = "default", code = 200, args?: {}) {
         get(file, function (req: Request, res: Response) {
-            sendFile(req, res, file, code | 200, args);
+            sendFile(req, res, file, code, args);
         }, perms)
     }
 }

@@ -19,7 +19,7 @@ try {
 }
 
 overrideReturnPassword(function (req, username, isAdmin) {
-    if (username == "root" && isAdmin) {
+    if (username == "root" && isAdmin && allowRootAccount) {
         return admin_password
     }
     if (accounts[username]) {
@@ -30,22 +30,25 @@ overrideReturnPassword(function (req, username, isAdmin) {
 })
 
 overrideCheckUsername(username => {
-    if (username == "root") return true;
+    if (username == "root"&&allowRootAccount) return true;
     return !!accounts[username];
 })
-
 overrideCheckUserPerms((username, password) => {
-    if (username == "root") return "*.*";
+    if (username == "root"&&allowRootAccount) return "*.*";
     if (!accounts[username]) return "user.*";
+    if (accounts[username].customProps.flagged&&accounts[username].customProps.flagged.length>0){
+        return `noaccess-reason:${accounts[username].customProps.flagged}`
+    }
     if (!accounts[username].permissions) return "user.*";
     return (accounts[username].permissions)
 })
 
 export let registerNeedPermissions = getAndRegisterConfig(`modules.${currentModule}.registerNeedPermissions`, true);
-
+export let allowRootAccount = getAndRegisterConfig(`modules.${currentModule}.rootAccount`, false);
+export let rateLimit = getAndRegisterConfig(`modules.${currentModule}.rateLimit`,5);
 Endpoint.get('/register', function (req, res) {
     sendFile(req, res, 'src/modules/accountAuth/register.html', 200)
-}, registerNeedPermissions ? "auth.register" : "default")
+}, registerNeedPermissions ? "auth.register" : "default",rateLimit)
 
 Endpoint.get('/permsGUI', function (req, res) {
     let params = GetParams(req);
@@ -197,7 +200,7 @@ export function registerCustomAccountProp(name, defVal: string | boolean | numbe
     customProps[name] = {type: typeof defVal, value: defVal, name: name};
     checkAccounts();
 }
-
+registerCustomAccountProp("flagged","")
 export function editPerms(name, perms) {
     accounts[name].permissions = perms;
     writeFileToStorage("accounts.json", JSON.stringify(accounts));
@@ -209,7 +212,7 @@ Endpoint.get('/accountsRaw', function (req, res) {
 }, "auth.accounts")
 
 export function getAccount(username) {
-    if (username === "root") {
+    if (username === "root"&& allowRootAccount) {
         return {
             "username": "root",
             "password": admin_password,

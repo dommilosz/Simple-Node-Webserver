@@ -1,7 +1,7 @@
 {
-  "name": "2bored2wait",
+  "name": "simple-node-webserver",
   "version": "1.0.0",
-  "description": "A proxy to wait out 2b2t.org's way too long queue.",
+  "description": "",
   "main": "src/main.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -10,14 +10,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GisliNielsen/2bored2wait.git"
+    "url": "git+https://github.com/dommilosz/Simple-Node-Webserver.git"
   },
   "author": "",
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/GisliNielsen/2bored2wait/issues"
+    "url": "https://github.com/dommilosz/Simple-Node-Webserver/issues"
   },
-  "homepage": "https://github.com/GisliNielsen/2bored2wait#readme",
+  "homepage": "https://github.com/dommilosz/Simple-Node-Webserver",
   "dependencies": {
     "@types/body-parser": "^1.19.0",
     "@types/express": "^4.17.11",
@@ -25,6 +25,7 @@
     "atob": "^2.1.2",
     "cookie-session": "^1.4.0",
     "express": "^4.17.1",
+    "express-rate-limit": "^5.2.6",
     "helmet": "^4.6.0",
     "httpolyglot": "^0.1.2",
     "mime": "^2.5.2",

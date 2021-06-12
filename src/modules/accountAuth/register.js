@@ -131,11 +131,6 @@ function changeAccount(name, pass, isAdmin, newName, custom) {
 }
 
 function changeAccountPerms(name, perms) {
-    perms = perms.replaceAll("\n", ";")
-    perms = perms.replaceAll(";;", ";")
-    perms = perms.replaceAll(" ", "")
-    perms = perms.replaceAll("\r", "")
-    perms = perms.replaceAll("\t", "")
     let body = {
         username: name,
         permissions: perms
@@ -177,7 +172,7 @@ function generateAllowedPerms(perms, parent) {
 }
 
 function redrawBoxes() {
-
+    perms = document.querySelector("#perms_area").value;
 
     let placeholder = document.getElementById('perms');
     placeholder.innerHTML = "";
