@@ -23,15 +23,20 @@
     "@types/express": "^4.17.11",
     "@types/node": "^14.14.37",
     "atob": "^2.1.2",
+    "compression": "^1.7.4",
     "cookie-session": "^1.4.0",
     "express": "^4.17.1",
     "express-rate-limit": "^5.2.6",
     "helmet": "^4.6.0",
+    "http-client-methods": "^1.0.3",
     "httpolyglot": "^0.1.2",
     "mime": "^2.5.2",
     "nodemon": "^2.0.7",
+    "ts-transformer-keys": "^0.4.3",
     "typescript": "^4.2.4",
-    "webhook-discord": "^3.7.7"
+    "typescript-is": "^0.19.0",
+    "webhook-discord": "^3.7.7",
+    "xxhash": "^0.3.0"
   },
   "devDependencies": {
     "cookie-parser": "^1.4.5",

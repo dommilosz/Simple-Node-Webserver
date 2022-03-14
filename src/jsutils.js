@@ -35,7 +35,7 @@ let loginStatus;
 
 function checkLogin() {
     let req = new XMLHttpRequest()
-    req.open("GET", `/checkLogin${createURLWithHash()}`, false)
+    req.open("GET", `/checkLogin`, false)
     req.send(null);
     loginStatus = JSON.parse(req.responseText);
     return loginStatus;
@@ -54,34 +54,6 @@ function getCurrentUserPermissions() {
 function getCurrentUserName() {
     if (!loginStatus) checkLogin();
     return loginStatus.username;
-}
-
-
-function GetParams() {
-    let url = location.href
-    let params = {};
-
-    let regex = /\?[a-z0-9]*=[^?]*/gm;
-    let m;
-    while ((m = regex.exec(url)) !== null) {
-        if (m.index === regex.lastIndex) {
-            regex.lastIndex++;
-        }
-        m.forEach((match, groupIndex) => {
-            match = match.replace('?', '')
-            let matcharr = match.split('=')
-            matcharr.shift()
-            params[match.split('=')[0]] = matcharr.join('=')
-        });
-    }
-
-    return params
-}
-
-function createURLWithHash() {
-    if (!GetParams().username || GetParams().username === "undefined") return "";
-    if (!GetParams().hash || GetParams().hash === "undefined") return "";
-    return `?hash=${GetParams().hash}?username=${GetParams().username}`;
 }
 
 window.addEventListener('load', bodyOnLoad, false);
@@ -680,14 +652,14 @@ function messageBoxInput(txt) {
 
 function XHRGet(url) {
     let xhr = new XMLHttpRequest();
-    xhr.open('GET', `${url}${createURLWithHash()}`, false)
+    xhr.open('GET', `${url}`, false)
     xhr.send(null)
     return (xhr.responseText);
 }
 
 function XHRPost(url, body) {
     let xhr = new XMLHttpRequest();
-    xhr.open('POST', `${url}${createURLWithHash()}`, false)
+    xhr.open('POST', `${url}`, false)
     xhr.setRequestHeader("Content-Type", "Application/json");
     xhr.send(JSON.stringify(body));
     return (xhr.responseText);
@@ -696,13 +668,20 @@ function XHRPost(url, body) {
 async function XHRGetAsync(url, progressCB) {
     return new Promise((r, j) => {
         let xhr = new XMLHttpRequest();
-        xhr.open('GET', `${url}${createURLWithHash()}`, true)
+        xhr.open('GET', `${url}`, true)
         xhr.send(null)
 
         xhr.onprogress = function (evt) {
             if (progressCB) {
                 if (evt.lengthComputable) {
                     progressCB(evt.loaded, evt.total)
+                }else{
+                    try{
+                        let length = Number(xhr.getResponseHeader("X-Raw-Content-Length"));
+                        progressCB(evt.loaded, length)
+                    }catch{
+
+                    }
                 }
             }
         };
@@ -721,7 +700,7 @@ async function XHRGetAsync(url, progressCB) {
 async function XHRGetAsyncHead(url) {
     return new Promise((r, j) => {
         let xhr = new XMLHttpRequest();
-        xhr.open('HEAD', `${url}${createURLWithHash()}`, true)
+        xhr.open('HEAD', `${url}`, true)
         xhr.send(null)
 
         xhr.onreadystatechange = function (aEvt) {
@@ -747,15 +726,12 @@ async function XHRGetCachedAsync(url, progressCB, storeKey) {
     requestCached = false;
     let total = 0;
     let headers = await XHRGetAsyncHead(url);
-    if (headers['content-checksum']) {
-        let sha = headers['content-checksum'];
-        if (headers['content-length']) {
-            total = headers['content-length'];
-        }
+    if (headers['content-validation']) {
+        let validation = headers['content-validation'];
         try {
             let cache = JSON.parse(await getForageItem(storeKey));
 
-            if (cache.sha === sha) {
+            if (cache.validation === validation) {
                 downloading = false;
                 progressCB(total, total)
                 requestCached = true;
@@ -768,10 +744,14 @@ async function XHRGetCachedAsync(url, progressCB, storeKey) {
     let data = (await XHRGetAsync(url, progressCB))
     try {
         let json = {};
-        json["sha"] = await sha256(data);
+        json["validation"] = headers['content-validation'];
         json["data"] = (data);
         await setForageItem(storeKey, JSON.stringify(json));
     } catch {
+    }
+	
+	if (headers['content-length']) {
+		total = headers['content-length'];
     }
     progressCB(total, total);
     return (data);
@@ -810,17 +790,19 @@ function checkPerm(uperm, perm) {
     return (boolperms || forceperms)
 }
 
-async function sha256(message) {
-    // encode as UTF-8
-    const msgBuffer = new TextEncoder().encode(message);
+function utf8btoa(string) {
+    const codeUnits = new Uint16Array(string.length);
+    for (let i = 0; i < codeUnits.length; i++) {
+        codeUnits[i] = string.charCodeAt(i);
+    }
+    return btoa(String.fromCharCode(...new Uint8Array(codeUnits.buffer)));
+}
 
-    // hash the message
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-
-    // convert ArrayBuffer to Array
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-
-    // convert bytes to hex string
-    const hashHex = hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
-    return hashHex;
+function utf8atob(encoded) {
+    binary = atob(encoded)
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < bytes.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return String.fromCharCode(...new Uint16Array(bytes.buffer));
 }

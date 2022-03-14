@@ -176,19 +176,7 @@ export function GetParams(req) {
     let url = req.originalUrl
     let params: any = {};
 
-    let regex = /\?[a-z0-9]*=[^?]*/gm;
-    let m;
-    while ((m = regex.exec(url)) !== null) {
-        if (m.index === regex.lastIndex) {
-            regex.lastIndex++;
-        }
-        m.forEach((match, groupIndex) => {
-            match = match.replace('?', '')
-            let matcharr = match.split('=')
-            matcharr.shift()
-            params[match.split('=')[0]] = matcharr.join('=')
-        });
-    }
+    params = req.query;
 
     if (!params.hash || params.hash == "undefined") params.hash = req.cookies.hash;
     if (!params.username || params.username == "undefined") params.username = req.cookies.username;

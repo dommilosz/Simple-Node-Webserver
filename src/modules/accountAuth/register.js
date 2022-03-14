@@ -92,7 +92,7 @@ let accounts_perms = {};
 
 function getAccounts() {
     let xhr = new XMLHttpRequest();
-    xhr.open('GET', `/accountsRaw${createURLWithHash()}`, false)
+    xhr.open('GET', `/accountsRaw`, false)
     xhr.send(null)
     let raw_json = JSON.parse(xhr.responseText)
     accounts_perms = raw_json;

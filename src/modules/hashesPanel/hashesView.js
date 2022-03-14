@@ -2,7 +2,7 @@ shown = ""
 
 function getData() {
     let xhr = new XMLHttpRequest();
-    xhr.open('GET', `/hashes${createURLWithHash()}`, false)
+    xhr.open('GET', `/hashes`, false)
     xhr.send(null)
     let raw_json = JSON.parse(xhr.responseText)
 
@@ -74,10 +74,6 @@ function showObjects(key) {
         obj.onclick = function () {
             showObjPopup(el, key, i)
         }
-        if (el === GetParams().hash) {
-            obj.innerHTML += ` [CURRENT]`
-            obj.className = "cat_obj c-red"
-        }
         objs.append(obj)
     })
 }
@@ -107,7 +103,7 @@ function showObjPopup(obj_json, cat_a, index) {
     popup.append(closebtn)
 
     let frame = document.createElement('iframe')
-    frame.src = `/ViewHashes/hash/${obj_json}${createURLWithHash()}`
+    frame.src = `/ViewHashes/hash/${obj_json}`
     vals.append(frame)
     frame.className = 'result'
 

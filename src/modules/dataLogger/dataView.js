@@ -2,7 +2,7 @@ shown = ""
 
 function getData() {
     let xhr = new XMLHttpRequest();
-    xhr.open('GET', `/data${createURLWithHash()}`, false)
+    xhr.open('GET', `/data`, false)
     xhr.send(null)
     json = JSON.parse(xhr.responseText)
     let results = $('#results')
@@ -78,7 +78,7 @@ function showObjects(key) {
         btn.onclick = function () {
             if (confirm(`Do You Want to delete ${key} [${i}] item?`)) {
                 let req = new XMLHttpRequest()
-                req.open("GET", `/Data/delitem/${key}/${i}${createURLWithHash()}`)
+                req.open("GET", `/Data/delitem/${key}/${i}`)
                 req.send(null)
                 setTimeout(function () {
                     getData();
@@ -93,7 +93,7 @@ function showObjPopup(obj_json, cat_a, index) {
     function Do_delete() {
         if (confirm(`Do You Want to delete ${cat_a} [${index}] item?`)) {
             let req = new XMLHttpRequest()
-            req.open("GET", `/Data/delitem/${cat_a}/${index}${createURLWithHash()}`)
+            req.open("GET", `/Data/delitem/${cat_a}/${index}`)
             req.send(null)
             showObjPopup('')
             setTimeout(getData, 500)
@@ -131,7 +131,7 @@ function showObjPopup(obj_json, cat_a, index) {
     popup.append(closebtn)
 
     let frame = document.createElement('iframe')
-    frame.src = `/ViewData/item/${cat_a}/${index}${createURLWithHash()}`
+    frame.src = `/ViewData/item/${cat_a}/${index}`
     vals.append(frame)
     frame.className = 'result'
 
