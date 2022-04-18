@@ -1,14 +1,13 @@
 import {Endpoint, GetParams} from "../../webserver";
 import {sendFile, sendText} from "../../wsutils";
-import {readFileFromStorageJSON, writeFileToStorage} from "../../fileStorage";
+import {readFileFromStorageJSON, writeFileToStorageJSON} from "../../firebase";
 
 
 let data = {}
-try {
-    data = readFileFromStorageJSON("data.json")
-} catch {
-}
-Endpoint.post('/savedata/*', function (req, res) {
+readFileFromStorageJSON("data.json").then(d=>{
+    data = d;
+})
+Endpoint.post('/savedata/*', async function (req, res) {
     let cat = req.url.replace('/savedata/', '').split('?')[0];
     if (cat.length < 1) {
         sendText(res, "Please Provide category", 400)
@@ -28,10 +27,10 @@ Endpoint.post('/savedata/*', function (req, res) {
     addinfo['rawHeaders'] = req.rawHeaders;
     addinfo['ip'] = req.ip;
     addinfo['timestamp'] = +new Date();
-    data = readFileFromStorageJSON("data.json")
+    data = await readFileFromStorageJSON("data.json")
     if (!data[cat]) data[cat] = []
     data[cat].push({body: body, add: addinfo})
-    writeFileToStorage("data.json", JSON.stringify(data))
+    await writeFileToStorageJSON("data.json", data)
     let params = GetParams(req)
     sendText(res, "Data Saved", 200)
 })
@@ -59,8 +58,8 @@ Endpoint.get('/ViewData/item/*', function (req, res) {
 
     sendFile(req, res, 'src/modules/dataLogger/itemView.html', 200, {item: data[cat][i]})
 }, "data.view")
-Endpoint.get('/data/delItem/*', function (req, res) {
-    data = (readFileFromStorageJSON("data.json"))
+Endpoint.get('/data/delItem/*', async function (req, res) {
+    data = (await readFileFromStorageJSON("data.json"))
     let args = req.url.split('?')[0].split('/')
     args.shift()
     args.shift()
@@ -69,7 +68,7 @@ Endpoint.get('/data/delItem/*', function (req, res) {
     let i = args[1]
 
     data[cat].splice(i, 1)
-    writeFileToStorage("data.json", JSON.stringify(data))
+    await writeFileToStorageJSON("data.json", data)
 
     sendText(res, "Deleted!", 200)
 }, "data.delete")

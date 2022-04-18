@@ -4,18 +4,20 @@ import {getAndRegisterConfig} from "../configHandler";
 export let loadedModules: any = {}
 export let showModuleLoadingErrors = getAndRegisterConfig("showModuleLoadingErrors", true);
 
-export function requireModule(name: string) {
+export function requireModule(name: string, hidelogs?: boolean) {
     if (!loadedModules) loadedModules = {}
     loadModule(name, "default");
     if (!loadedModules[name] || !loadedModules[name].loaded) {
-        console.log(`  * Error Loading dependency ${name}`)
+        if (!hidelogs)
+            console.log(`  * Error Loading dependency ${name}`)
+        return false;
     }
-    return
+    return loadedModules[name].path;
 }
 
 export let currentModule = "";
 
-export function loadModule(name: string, type: string) {
+export function loadModule(name: string, type: string, hidelogs?: boolean) {
     if (!loadedModules) loadedModules = {}
     if (!loadedModules[name] || !loadedModules[name].loaded) {
         try {
@@ -31,15 +33,22 @@ export function loadModule(name: string, type: string) {
                 if (type != "default") return;
             }
             currentModule = name;
+            let ts = +new Date();
             let path = `./${name}/${name}.ts`;
             let module = require(path);
-            console.log(`Loading ${name} - SUCCESS`)
-            loadedModules[name] = {name: name, loaded: true,path}
+            if (!hidelogs) {
+                console.log(`Loading ${name} - SUCCESS - ${(+new Date())-ts}ms`);
+            }
+
+
+            loadedModules[name] = {name: name, loaded: true, path}
             return module;
         } catch (ex) {
-            console.log(`Loading ${name} - FAIL`)
+            if (!hidelogs)
+                console.log(`Loading ${name} - FAIL`)
             if (showModuleLoadingErrors) {
-                console.log(ex);
+                if (!hidelogs)
+                    console.log(ex);
             }
             loadedModules[name] = {name: name, loaded: false}
         }
@@ -49,14 +58,16 @@ export function loadModule(name: string, type: string) {
 export function loadModules() {
     loadModulesCustom("default")
 }
+
 export function unloadModules() {
     console.log("Unloading modules")
-    loadedModules.forEach(el=>{
-        if(el.path)
-        unloadModule(el.path);
+    loadedModules.forEach(el => {
+        if (el.path)
+            unloadModule(el.path);
     })
     loadedModules.clear();
 }
+
 export function unloadModule(module) {
     let solvedName = require.resolve(module),
         nodeModule = require.cache[solvedName];

@@ -1,4 +1,4 @@
-import {readFileFromStorageJSON, writeFileToStorage} from "../../fileStorage";
+import {readFileFromStorageJSON, writeFileToStorageJSON} from "../../firebase";
 import {Endpoint, GetParams} from "../../webserver";
 import {
     admin_password,
@@ -12,11 +12,9 @@ import {getAndRegisterConfig} from "../../configHandler";
 import {currentModule} from "../modulesHandler";
 
 let accounts = {}
-try {
-    accounts = readFileFromStorageJSON("accounts.json")
-} catch {
-    accounts = {}
-}
+readFileFromStorageJSON("accounts.json").then(a=>{
+    accounts = a;
+})
 
 overrideReturnPassword(function (req, username, isAdmin) {
     if (username == "root" && isAdmin && allowRootAccount) {
@@ -78,13 +76,13 @@ Endpoint.get('/accounts', function (req, res) {
     sendFile(req, res, 'src/modules/accountAuth/accounts.html', 200)
 }, "auth.accounts")
 
-Endpoint.post('/registerAcc', function (req, res) {
+Endpoint.post('/registerAcc', async function (req, res) {
     let body = req.body;
     if (!body.username || !body.password || body.username.length < 4 || body.password.length < 4) {
         sendCompletion(res, "Wrong details", true, 200);
         return;
     }
-    if (body.username.length>255||body.password.length>255||JSON.stringify(body).length>768) {
+    if (body.username.length > 255 || body.password.length > 255 || JSON.stringify(body).length > 768) {
         sendCompletion(res, "Wrong details", true, 200);
         return;
     }
@@ -98,11 +96,11 @@ Endpoint.post('/registerAcc', function (req, res) {
         sendCompletion(res, "Account already exists!", true, 200);
         return;
     }
-    registerAcc(atob(body.username), atob(body.password), isAdmin)
+    await registerAcc(atob(body.username), atob(body.password), isAdmin)
     sendCompletion(res, "Successfully created account", false, 200);
 }, registerNeedPermissions ? "auth.register" : "default")
 
-Endpoint.post('/deleteAcc', function (req, res) {
+Endpoint.post('/deleteAcc', async function (req, res) {
     let body = req.body;
     if (!body.username) {
         sendCompletion(res, "Wrong details", true, 200);
@@ -112,11 +110,11 @@ Endpoint.post('/deleteAcc', function (req, res) {
         sendCompletion(res, "Account does not exist!", true, 200);
         return;
     }
-    removeAcc(body.username)
+    await removeAcc(body.username)
     sendCompletion(res, "Successfully deleted account", false, 200);
 }, "auth.accounts.delete")
 
-Endpoint.post('/changeAcc', function (req, res) {
+Endpoint.post('/changeAcc', async function (req, res) {
     let body = req.body;
     if (!body.username) {
         sendCompletion(res, "Wrong details", true, 200);
@@ -126,11 +124,11 @@ Endpoint.post('/changeAcc', function (req, res) {
         sendCompletion(res, "Account does not exist!", true, 200);
         return;
     }
-    changeProps(body.username, body.password, body.admin, body.newUsername, body.custom)
+    await changeProps(body.username, body.password, body.admin, body.newUsername, body.custom)
     sendCompletion(res, "Successfully changed account", false, 200);
 }, "auth.accounts.change")
 
-Endpoint.post('/changePerms', function (req, res) {
+Endpoint.post('/changePerms', async function (req, res) {
     let body = req.body;
     if (!body.username || !body.permissions) {
         sendCompletion(res, "Wrong details", true, 200);
@@ -152,19 +150,19 @@ Endpoint.post('/changePerms', function (req, res) {
         return;
     }
 
-    editPerms(body.username, body.permissions)
+    await editPerms(body.username, body.permissions)
     sendCompletion(res, "Successfully changed account", false, 200);
 }, "auth.perms.edit")
 
-export function registerAcc(name, pass, isAdmin) {
+export async function registerAcc(name, pass, isAdmin) {
     accounts[name] = ({username: name, password: pass, permissions: isAdmin ? "*.*" : "user.*"})
     checkAccounts();
-    writeFileToStorage("accounts.json", JSON.stringify(accounts));
+    await writeFileToStorageJSON("accounts.json", (accounts));
 }
 
-export function removeAcc(name) {
+export async function removeAcc(name) {
     delete accounts[name]
-    writeFileToStorage("accounts.json", JSON.stringify(accounts));
+    await writeFileToStorageJSON("accounts.json", (accounts));
 }
 
 export function renameAcc(name, newName) {
@@ -173,7 +171,7 @@ export function renameAcc(name, newName) {
     delete accounts[name];
 }
 
-export function changeProps(name, pass, isAdmin, newName, custom?: { name: string, value: boolean | string | number }) {
+export async function changeProps(name, pass, isAdmin, newName, custom?: { name: string, value: boolean | string | number }) {
     if (newName) {
         renameAcc(name, newName);
         return;
@@ -191,7 +189,7 @@ export function changeProps(name, pass, isAdmin, newName, custom?: { name: strin
         accounts[name].customProps = custom;
         checkAccounts();
     }
-    writeFileToStorage("accounts.json", JSON.stringify(accounts));
+    await writeFileToStorageJSON("accounts.json", (accounts));
 }
 
 export let customProps = {};
@@ -201,9 +199,9 @@ export function registerCustomAccountProp(name, defVal: string | boolean | numbe
     checkAccounts();
 }
 registerCustomAccountProp("flagged","")
-export function editPerms(name, perms) {
+export async function editPerms(name, perms) {
     accounts[name].permissions = perms;
-    writeFileToStorage("accounts.json", JSON.stringify(accounts));
+    await writeFileToStorageJSON("accounts.json", (accounts));
 }
 
 Endpoint.get('/accountsRaw', function (req, res) {

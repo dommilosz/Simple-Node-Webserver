@@ -3,16 +3,19 @@ import * as fs from "fs";
 export let folderPath = "files/";
 
 export function readFileFromStorage(name) {
+    console.log("rffs: "+name);
     if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath);
-    return fs.readFileSync(folderPath + name, {encoding: "utf8"})
+    return fs.readFileSync(folderPath + name, {encoding: "utf8"});
 }
 
 export function readFileFromStorageJSON(name) {
+    console.log("rffsjson: "+name);
     if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath);
     return JSON.parse(fs.readFileSync(folderPath + name, {encoding: "utf8"}))
 }
 
 export function readFileFromStorageJSON_Safe(name) {
+    console.log("rffsjsons: "+name);
     try {
         if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath);
         return JSON.parse(fs.readFileSync(folderPath + name, {encoding: "utf8"}))
@@ -22,6 +25,7 @@ export function readFileFromStorageJSON_Safe(name) {
 }
 
 export function readFileFromStorage_Safe(name) {
+    console.log("rffss: "+name);
     try {
         if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath);
         return fs.readFileSync(folderPath + name, {encoding: "utf8"})
